@@ -141,10 +141,10 @@ struct TaskCardView: View {
                     } label: {
                         Text(taskSheetManager.isTaskCompleted ? "TASK COMPLETED" : "COMPLETE MY TASK")
                             .font(.switzer(14))
-                            .foregroundColor(taskSheetManager.isTaskCompleted ? .roomlyGrey25 : .white)
+                            .foregroundColor(taskSheetManager.isTaskCompleted ? Color(hex: "7A7572") : .white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(taskSheetManager.isTaskCompleted ? Color.roomlyGrey0 : Color.roomlyBlack)
+                            .background(taskSheetManager.isTaskCompleted ? Color(hex: "251819") : Color.roomlyBlack)
                             .clipShape(Capsule())
                     }
                 } else {

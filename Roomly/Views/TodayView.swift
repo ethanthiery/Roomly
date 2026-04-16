@@ -243,13 +243,11 @@ private struct StreakCard: View {
             } label: {
                 Group {
                     if viewModel.isTodayClaimed {
-                        // Déjà réclamé — état disabled uniforme
                         Text("DAILY CLOTH COLLECTED")
                             .font(.switzer(14))
-                            .foregroundColor(.roomlyGrey25)
+                            .foregroundColor(Color(hex: "7A7572"))
                             .lineLimit(1)
                     } else if viewModel.canClaim {
-                        // Prêt à réclamer — état actif
                         HStack(spacing: 6) {
                             Text("COLLECT YOUR DAILY CLOTH")
                                 .font(.switzer(14))
@@ -260,10 +258,9 @@ private struct StreakCard: View {
                                 .frame(width: 18, height: 18)
                         }
                     } else {
-                        // Tâche pas encore faite — état disabled uniforme
                         Text("COMPLETE YOUR TASK FIRST")
                             .font(.switzer(14))
-                            .foregroundColor(.roomlyGrey25)
+                            .foregroundColor(Color(hex: "7A7572"))
                             .lineLimit(1)
                     }
                 }
@@ -271,7 +268,7 @@ private struct StreakCard: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
             }
-            .background(viewModel.canClaim && !viewModel.isTodayClaimed ? Color.roomlyBlack : Color.roomlyGrey0)
+            .background(viewModel.canClaim && !viewModel.isTodayClaimed ? Color.roomlyBlack : Color(hex: "251819"))
             .clipShape(Capsule())
         }
         .padding(12)

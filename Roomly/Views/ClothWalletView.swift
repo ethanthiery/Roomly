@@ -10,151 +10,139 @@ struct ClothWalletView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-        VStack(alignment: .leading, spacing: 0) {
+            Color.white.ignoresSafeArea()
 
-            // MARK: — Header : titre centré + croix droite
-            ZStack {
-                Text("Your Cloth Bucket")
-                    .font(.switzer(18))
-                    .foregroundColor(.roomlyBlack)
-                    .frame(maxWidth: .infinity, alignment: .center)
+            // ── Contenu scrollable ──
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
 
-                HStack {
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .semibold))
+                    // MARK: — Header : titre gauche + croix droite
+                    HStack(alignment: .top) {
+                        Text("Spend Your Cloths")
+                            .font(.switzer(28))
                             .foregroundColor(.roomlyBlack)
-                            .frame(width: 32, height: 32)
-                            .background(Color.roomlyGrey0)
-                            .clipShape(Circle())
+                            .tracking(-0.5)
+                        Spacer()
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.roomlyBlack)
+                                .frame(width: 32, height: 32)
+                                .background(Color.roomlyGrey0)
+                                .clipShape(Circle())
+                        }
                     }
-                }
-            }
-            .padding(.bottom, 28)
 
-            // MARK: — Spend section
-            VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
-
-                Text("Spend Your Cloths")
-                    .font(.switzer(22))
-                    .foregroundColor(.roomlyBlack)
-                    .tracking(-0.5)
-
-                HStack(spacing: 20) {
-                    // Lucky Day card — tappable
-                    Button {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = true }
-                    } label: {
-                        VStack(spacing: 8) {
-                            HStack {
-                                Spacer()
-                                HStack(spacing: 4) {
-                                    Text(streakVM.luckyDayAvailable ? "ACTIVE" : "GET 1 FOR 199")
+                    // MARK: — Cards
+                    VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
+                        HStack(spacing: 20) {
+                            // Lucky Day card — tappable
+                            Button {
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = true }
+                            } label: {
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Spacer()
+                                        HStack(spacing: 4) {
+                                            Text(streakVM.luckyDayAvailable ? "ACTIVE" : "GET 1 FOR 199")
+                                                .font(.switzer(14))
+                                                .foregroundColor(.roomlyBlack)
+                                            if !streakVM.luckyDayAvailable {
+                                                Image("chiffon")
+                                                    .resizable().scaledToFit()
+                                                    .frame(width: 18, height: 18)
+                                            }
+                                        }
+                                        .fixedSize()
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 6)
+                                        .background(streakVM.luckyDayAvailable ? Color.green.opacity(0.15) : Color.white)
+                                        .clipShape(Capsule())
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image("mouth2")
+                                        .resizable().scaledToFit()
+                                        .frame(height: 65)
+                                    Spacer(minLength: 0)
+                                    Text("Day-Off")
                                         .font(.switzer(14))
                                         .foregroundColor(.roomlyBlack)
-                                    if !streakVM.luckyDayAvailable {
-                                        Image("chiffon")
-                                            .resizable().scaledToFit()
-                                            .frame(width: 18, height: 18)
-                                    }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white)
+                                        .clipShape(Capsule())
                                 }
-                                .fixedSize()
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
-                                .background(streakVM.luckyDayAvailable ? Color.green.opacity(0.15) : Color.white)
-                                .clipShape(Capsule())
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
+                                .background(Color.roomlyGrey0)
+                                .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                             }
-                            Spacer(minLength: 0)
-                            Image("mouth2")
-                                .resizable().scaledToFit()
-                                .frame(height: 65)
-                            Spacer(minLength: 0)
-                            Text("Day-Off")
-                                .font(.switzer(14))
-                                .foregroundColor(.roomlyBlack)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 6)
-                                .background(Color.white)
-                                .clipShape(Capsule())
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
-                        .background(Color.roomlyGrey0)
-                        .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
-                    }
-                    .buttonStyle(.plain)
+                            .buttonStyle(.plain)
 
-                    // Add Task card
-                    Button {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        showAddTask = true
-                    } label: {
-                        VStack(spacing: 8) {
-                            Spacer()
-                            Image(systemName: "plus")
-                                .font(.system(size: 28, weight: .medium))
-                                .foregroundColor(.roomlyBlack)
-                            Spacer()
-                            Text("Add a Task")
-                                .font(.switzer(14))
-                                .foregroundColor(.roomlyBlack)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 6)
-                                .background(Color.white)
-                                .clipShape(Capsule())
+                            // Add Task card
+                            Button {
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                showAddTask = true
+                            } label: {
+                                VStack(spacing: 8) {
+                                    Spacer()
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 28, weight: .medium))
+                                        .foregroundColor(.roomlyBlack)
+                                    Spacer()
+                                    Text("Add a Task")
+                                        .font(.switzer(14))
+                                        .foregroundColor(.roomlyBlack)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white)
+                                        .clipShape(Capsule())
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
+                                .background(Color.roomlyGrey0)
+                                .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
-                        .background(Color.roomlyGrey0)
-                        .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                     }
-                    .buttonStyle(.plain)
+
+                    // MARK: — Coming soon
+                    Text("More features coming soon.")
+                        .font(.satoshi(12))
+                        .foregroundColor(.roomlyGrey25)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.bottom, 8)
                 }
+                .padding(.horizontal, RoomlySpacing.screenPadding)
+                .padding(.top, 16)
+                .padding(.bottom, 100)
             }
 
-            // MARK: — Paywall (sous Spend Your Cloths)
-            WalletPromoCard()
-                .padding(.top, RoomlySpacing.sectionGap)
+            // ── Overlay Lucky Day sheet ──
+            if showLuckyDay {
+                Color.black.opacity(0.15)
+                    .ignoresSafeArea()
+                    .onTapGesture { withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false } }
+                    .transition(.opacity)
+                    .zIndex(1)
 
-            Spacer()
-
-            // MARK: — Coming soon (tout en bas)
-            Text("More features coming soon.")
-                .font(.satoshi(12))
-                .foregroundColor(.roomlyGrey25)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.bottom, 24)
-        }
-        .padding(.horizontal, RoomlySpacing.screenPadding)
-        .padding(.top, 16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.white)
-        .ignoresSafeArea(edges: .bottom)
-
-        // Overlay Lucky Day sheet — par-dessus ClothWalletView
-        if showLuckyDay {
-            Color.black.opacity(0.15)
-                .ignoresSafeArea()
-                .onTapGesture { withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false } }
-                .transition(.opacity)
-                .zIndex(1)
-
-            VStack {
-                Spacer()
-                LuckyDayPurchaseSheet(onDismiss: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false }
-                })
+                VStack {
+                    Spacer()
+                    LuckyDayPurchaseSheet(onDismiss: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false }
+                    })
+                    .zIndex(2)
+                }
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .bottom))
                 .zIndex(2)
             }
-            .ignoresSafeArea(edges: .bottom)
-            .transition(.move(edge: .bottom))
-            .zIndex(2)
         }
-        } // ZStack
+        .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(isPresented: $showAddTask) {
             AddTaskSheet(localDismiss: { showAddTask = false })
                 .environmentObject(AddTaskSheetManager())

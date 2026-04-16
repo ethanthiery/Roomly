@@ -159,7 +159,7 @@ class StreakViewModel: ObservableObject {
         FirebaseManager.shared.uploadMemberData(avatarId: avatarId, fields: [
             "clothBalance":        clothBalance,
             "monthlyClothBalance": monthlyClothBalance,
-            "name":                AvatarInfo.info(for: avatarId).name,
+            "name":                UserDefaults.standard.string(forKey: "username") ?? AvatarInfo.info(for: avatarId).name,
             "currentStreak":       currentTrailingStreak
         ])
     }

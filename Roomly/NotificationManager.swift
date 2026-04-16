@@ -63,7 +63,7 @@ final class NotificationManager: NSObject {
 
         if hasActiveStreak {
             // Option A — user has an ongoing streak
-            content.title = "Your streak is on the line 🔥"
+            content.title = "Your streak is on the line 🧺"
             content.body = "Don't break it today. Claim your cloth."
         } else if roommateMaxStreak > 0 {
             // Option C — a roommate is ahead

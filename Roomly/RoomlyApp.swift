@@ -11,6 +11,7 @@ struct RoomlyApp: App {
     @StateObject private var luckyDaySheetManager    = LuckyDaySheetManager()
     @StateObject private var addTaskSheetManager     = AddTaskSheetManager()
     @StateObject private var deleteTaskSheetManager  = DeleteTaskSheetManager()
+    @StateObject private var leaveRoomSheetManager   = LeaveRoomSheetManager()
     @StateObject private var taskStore               = TaskStore()
     @StateObject private var roommateManager  = RoommateManager()
     @StateObject private var taskScheduler    = TaskScheduler()
@@ -32,6 +33,7 @@ struct RoomlyApp: App {
                 OnboardingView {
                     onboardingCompleted = true
                 }
+                .environmentObject(userSession)
             } else if userSession.isSetup {
                 ContentView()
                     .environmentObject(userSession)
@@ -39,6 +41,7 @@ struct RoomlyApp: App {
                     .environmentObject(luckyDaySheetManager)
                     .environmentObject(addTaskSheetManager)
                     .environmentObject(deleteTaskSheetManager)
+                    .environmentObject(leaveRoomSheetManager)
                     .environmentObject(taskStore)
                     .environmentObject(roommateManager)
                     .environmentObject(taskScheduler)

@@ -481,6 +481,7 @@ private struct GrindProgressionRow: View {
                 .resizable().scaledToFill()
                 .frame(width: 30, height: 30)
                 .clipShape(Circle())
+                .scaleEffect(x: -1, y: 1)
 
             HStack(spacing: 8) {
                 MedalCount(count: gold, medal: "medal_gold")

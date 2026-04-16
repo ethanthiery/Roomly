@@ -79,6 +79,8 @@ struct AddTaskSheet: View {
                         Text("Browse suggestions or search for a task.")
                             .font(.satoshi(16))
                             .foregroundColor(.roomlyBlack)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
                 Spacer()
@@ -100,9 +102,12 @@ struct AddTaskSheet: View {
 
             // ── Search bar ──
             HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
+                Image("icon_search")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
                     .foregroundColor(.roomlyGrey25)
-                    .font(.system(size: 15))
                 TextField("Search a task…", text: $searchText)
                     .font(.satoshi(16))
                     .foregroundColor(.roomlyBlack)
@@ -118,7 +123,7 @@ struct AddTaskSheet: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .background(Color.roomlyGrey0)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(Capsule())
 
             Spacer().frame(height: 20)
 
@@ -176,10 +181,10 @@ struct AddTaskSheet: View {
                      ? "ADD \"\(selected!.title.uppercased())\""
                      : "PICK A TASK TO ADD")
                     .font(.switzer(14))
-                    .foregroundColor(selected != nil ? .white : .roomlyGrey25)
+                    .foregroundColor(selected != nil ? .white : Color(hex: "7A7572"))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(selected != nil ? Color.roomlyBlack : Color.roomlyGrey0)
+                    .background(selected != nil ? Color.roomlyBlack : Color(hex: "251819"))
                     .clipShape(Capsule())
             }
             .disabled(selected == nil)

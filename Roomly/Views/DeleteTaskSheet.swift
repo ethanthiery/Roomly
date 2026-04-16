@@ -11,7 +11,7 @@ struct DeleteTaskSheet: View {
             HStack {
                 Spacer()
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.roomlyGrey0)
+                    .fill(Color(hex: "E3EAF0"))
                     .frame(width: 30, height: 4)
                 Spacer()
             }

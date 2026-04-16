@@ -49,6 +49,8 @@ final class TaskScheduler: ObservableObject {
         let taskId = todayAssignments[avatarId] ?? pool.first ?? TaskData.all[0].id
         let avatarInfo = AvatarInfo.info(for: avatarId)
 
+        let ownerLabel = AvatarInfo.ownerLabel(for: avatarId)
+
         // Tâche de base ?
         if let base = TaskData.all.first(where: { $0.id == taskId }) {
             return TaskData(
@@ -57,7 +59,7 @@ final class TaskScheduler: ObservableObject {
                 subtitle: base.subtitle,
                 image: base.image,
                 winPoints: base.winPoints,
-                ownerLabel: avatarInfo.ownerLabel,
+                ownerLabel: ownerLabel,
                 clothReward: base.clothReward
             )
         }
@@ -72,7 +74,7 @@ final class TaskScheduler: ObservableObject {
                 subtitle: "NEW TASK",
                 image: p.imageName,
                 winPoints: "WIN : \(p.clothReward)",
-                ownerLabel: avatarInfo.ownerLabel,
+                ownerLabel: ownerLabel,
                 clothReward: p.clothReward
             )
         }

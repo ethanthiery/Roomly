@@ -1,27 +1,41 @@
 import Foundation
 import Combine
 
-/// Identité de l'utilisateur courant sur cet appareil.
-/// Sera remplacé par un vrai onboarding plus tard.
 class UserSession: ObservableObject {
 
     @Published var currentAvatarId: String? {
         didSet { UserDefaults.standard.set(currentAvatarId, forKey: "currentAvatarId") }
     }
 
-    var isSetup: Bool { currentAvatarId != nil }
+    @Published var username: String {
+        didSet { UserDefaults.standard.set(username, forKey: "username") }
+    }
 
-    /// Nom affiché de l'utilisateur courant.
+    @Published var roomName: String {
+        didSet { UserDefaults.standard.set(roomName, forKey: "roomName") }
+    }
+
+    var isSetup: Bool { currentAvatarId != nil && !username.isEmpty }
+
     var currentName: String {
-        guard let id = currentAvatarId else { return "You" }
-        return AvatarInfo.info(for: id).name
+        username.isEmpty ? "You" : username
     }
 
     init() {
         self.currentAvatarId = UserDefaults.standard.string(forKey: "currentAvatarId")
+        self.username        = UserDefaults.standard.string(forKey: "username") ?? ""
+        self.roomName        = UserDefaults.standard.string(forKey: "roomName") ?? ""
     }
 
     func setup(avatarId: String) {
         currentAvatarId = avatarId
+    }
+
+    func setUsername(_ name: String) {
+        username = name
+    }
+
+    func setRoomName(_ name: String) {
+        roomName = name
     }
 }

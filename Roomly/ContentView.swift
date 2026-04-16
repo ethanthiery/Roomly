@@ -14,6 +14,7 @@ struct ContentView: View {
     @EnvironmentObject var luckyDaySheetManager: LuckyDaySheetManager
     @EnvironmentObject var addTaskSheetManager: AddTaskSheetManager
     @EnvironmentObject var deleteTaskSheetManager: DeleteTaskSheetManager
+    @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var taskScheduler: TaskScheduler
     @EnvironmentObject var userSession: UserSession
@@ -76,6 +77,31 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        // Leave room sheet — au-dessus de la navbar
+        .overlay {
+            ZStack(alignment: .bottom) {
+                if leaveRoomSheetManager.isPresented {
+                    Color.black.opacity(0.15)
+                        .ignoresSafeArea()
+                        .onTapGesture { leaveRoomSheetManager.hide() }
+                        .transition(.opacity)
+                        .zIndex(1)
+
+                    VStack(spacing: 0) {
+                        Spacer()
+                        LeaveRoomSheet(
+                            onLeave:   { leaveRoomSheetManager.hide() /* TODO: quitter */ },
+                            onDismiss: { leaveRoomSheetManager.hide() }
+                        )
+                    }
+                    .ignoresSafeArea(edges: .bottom)
+                    .transition(.move(edge: .bottom))
+                    .zIndex(2)
+                }
+            }
+            .ignoresSafeArea()
+            .animation(.spring(response: 0.5, dampingFraction: 1.0), value: leaveRoomSheetManager.isPresented)
+        }
         // Delete task sheet — au-dessus de la navbar
         .overlay {
             ZStack(alignment: .bottom) {
@@ -111,7 +137,14 @@ struct ContentView: View {
         .onChange(of: streakVM.currentTrailingStreak) { _, _ in
             scheduleNotifications()
         }
-        .onChange(of: taskSheetManager.isTaskCompleted) { _, _ in
+        .onChange(of: taskSheetManager.isTaskCompleted) { oldValue, newValue in
+            if newValue && !oldValue {
+                // Tâche confirmée → créditer les cloths
+                streakVM.addCloths(taskSheetManager.clothsAwarded)
+            } else if !newValue && oldValue {
+                // Undo → retirer les cloths ajoutés
+                streakVM.addCloths(-taskSheetManager.clothsAwarded)
+            }
             scheduleNotifications()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openTodayTab)) { _ in

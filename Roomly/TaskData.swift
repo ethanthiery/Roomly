@@ -51,13 +51,27 @@ struct AvatarInfo {
 
 extension AvatarInfo {
     static let all: [AvatarInfo] = [
-        AvatarInfo(id: "avatar1", name: "Ethan",  ownerLabel: "",             isMe: true),
-        AvatarInfo(id: "avatar2", name: "Laura",  ownerLabel: "LAURA'S TASK", isMe: false),
-        AvatarInfo(id: "avatar3", name: "Lea",    ownerLabel: "LEA'S TASK",   isMe: false),
-        AvatarInfo(id: "avatar4", name: "James",  ownerLabel: "JAMES'S TASK", isMe: false),
+        AvatarInfo(id: "avatar1",  name: "Ethan",  ownerLabel: "ETHAN'S TASK",  isMe: false),
+        AvatarInfo(id: "avatar2",  name: "Laura",  ownerLabel: "LAURA'S TASK",  isMe: false),
+        AvatarInfo(id: "avatar3",  name: "Lea",    ownerLabel: "LEA'S TASK",    isMe: false),
+        AvatarInfo(id: "avatar4",  name: "James",  ownerLabel: "JAMES'S TASK",  isMe: false),
+        AvatarInfo(id: "avatar5",  name: "Alex",   ownerLabel: "ALEX'S TASK",   isMe: false),
+        AvatarInfo(id: "avatar6",  name: "Sam",    ownerLabel: "SAM'S TASK",    isMe: false),
+        AvatarInfo(id: "avatar7",  name: "Jordan", ownerLabel: "JORDAN'S TASK", isMe: false),
+        AvatarInfo(id: "avatar8",  name: "Casey",  ownerLabel: "CASEY'S TASK",  isMe: false),
+        AvatarInfo(id: "avatar9",  name: "Riley",  ownerLabel: "RILEY'S TASK",  isMe: false),
+        AvatarInfo(id: "avatar10", name: "Quinn",  ownerLabel: "QUINN'S TASK",  isMe: false),
     ]
 
     static func info(for avatarId: String) -> AvatarInfo {
         all.first { $0.id == avatarId } ?? all[0]
+    }
+
+    /// Génère le badge dynamiquement selon si c'est le user courant ou non.
+    static func ownerLabel(for avatarId: String) -> String {
+        let myId       = UserDefaults.standard.string(forKey: "currentAvatarId") ?? ""
+        let myUsername = UserDefaults.standard.string(forKey: "username") ?? ""
+        if avatarId == myId { return "" }  // Pas de badge sur sa propre carte
+        return info(for: avatarId).ownerLabel
     }
 }

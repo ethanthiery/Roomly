@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AccountView: View {
+    @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
@@ -12,7 +14,7 @@ struct AccountView: View {
                     .tracking(-0.5)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                // MARK: — Profile row (flat, no card)
+                // MARK: — Profile row
                 HStack(spacing: 12) {
                     Image("avatar1")
                         .resizable()
@@ -37,7 +39,7 @@ struct AccountView: View {
                         .clipShape(Capsule())
                 }
 
-                // MARK: — Promo dark card (with key images)
+                // MARK: — Promo dark card
                 AccountPromoCard()
 
                 // MARK: — Your Room section
@@ -62,11 +64,9 @@ struct AccountView: View {
 private struct AccountPromoCard: View {
     var body: some View {
         ZStack {
-            // Dark background
             RoundedRectangle(cornerRadius: RoomlyRadius.card)
                 .fill(Color.roomlyDark)
 
-            // Keys decorative — large, at left and right edges
             GeometryReader { geo in
                 let w = geo.size.width
                 let h = geo.size.height
@@ -88,7 +88,6 @@ private struct AccountPromoCard: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
 
-            // Text + CTA (centered)
             VStack(spacing: 8) {
                 Text("Break The Limit.")
                     .font(.switzer(32))
@@ -122,7 +121,6 @@ private struct AccountPromoCard: View {
 
                 Spacer(minLength: 0)
 
-                // CTA Button
                 Button {} label: {
                     Text("GET PRO FOR 40% OFF")
                         .font(.switzer(14))
@@ -151,11 +149,19 @@ private struct AccountPromoCard: View {
 // MARK: - Room Card
 
 private struct RoomCard: View {
+    @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
+    @EnvironmentObject var userSession: UserSession
+
+    // TODO: remplacer par roommateManager.activeAvatarIds.count quand branché Firebase
+    let roommateCount: Int = 4
+    let maxFreeRoomates: Int = 4
+
+    var isAtCapacity: Bool { roommateCount >= maxFreeRoomates }
+
     var body: some View {
         VStack(spacing: 12) {
             // Top row: overlapped avatars + room name pill
             HStack {
-                // Overlapped avatars
                 HStack(spacing: 4) {
                     ForEach(["avatar1", "avatar2", "avatar3", "avatar4"], id: \.self) { name in
                         Image(name)
@@ -166,11 +172,8 @@ private struct RoomCard: View {
                             .scaleEffect(x: -1, y: 1)
                     }
                 }
-
                 Spacer()
-
-                // Room name badge
-                Text("The Coolok's")
+                Text(userSession.roomName.isEmpty ? "My Flat" : userSession.roomName)
                     .font(.switzer(14))
                     .foregroundColor(.roomlyBlack)
                     .padding(.horizontal, 12)
@@ -179,27 +182,126 @@ private struct RoomCard: View {
                     .clipShape(Capsule())
             }
 
-            // GET PRO & ADD NEW ROOMATES
-            Text("GET PRO & ADD NEW ROOMATES")
-                .font(.switzer(14))
-                .foregroundColor(.white)
+            // ADD NEW ROOMATES
+            Button {
+                // TODO: < 4 → ajouter un roomate / ≥ 4 → ouvrir paywall PRO
+            } label: {
+                HStack(spacing: 6) {
+                    if isAtCapacity {
+                        Image("icon_steal")
+                            .resizable()
+                            .renderingMode(.template)
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .foregroundColor(.white)
+                    }
+                    Text("ADD NEW ROOMATES")
+                        .font(.switzer(14))
+                        .foregroundColor(.white)
+                }
                 .frame(maxWidth: .infinity)
                 .frame(height: 42)
                 .background(Color.roomlyBlack)
                 .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+            }
 
             // LEAVE THE ROOM
-            Text("LEAVE THE ROOM")
-                .font(.switzer(14))
-                .foregroundColor(.roomlyBlack)
-                .frame(maxWidth: .infinity)
-                .frame(height: 42)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+            Button { leaveRoomSheetManager.show() } label: {
+                Text("LEAVE THE ROOM")
+                    .font(.switzer(14))
+                    .foregroundColor(.roomlyBlack)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 42)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+            }
         }
         .padding(16)
         .background(Color.roomlyGrey0)
         .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+    }
+}
+
+// MARK: - Leave Room Sheet
+
+struct LeaveRoomSheet: View {
+    var onLeave: () -> Void
+    var onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+
+            // Handle
+            HStack {
+                Spacer()
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(hex: "E3EAF0"))
+                    .frame(width: 30, height: 4)
+                Spacer()
+            }
+            .padding(.vertical, 16)
+
+            // Titre
+            Text("You're About To Leave.")
+                .font(.switzer(28))
+                .foregroundColor(.roomlyBlack)
+
+            Spacer().frame(height: 12)
+
+            // Info row
+            HStack(alignment: .top, spacing: 10) {
+                Image("icon_info")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(.roomlyBlack)
+                    .padding(6)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .roomlyShadow()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your roommates will miss you.")
+                        .font(.satoshi(16))
+                        .foregroundColor(.roomlyBlack)
+                    Text("Are you sure you want to leave?")
+                        .font(.satoshi(16))
+                        .foregroundColor(.roomlyBlack)
+                }
+            }
+
+            Spacer().frame(height: 28)
+
+            // CTA principal — rester
+            Button(action: onDismiss) {
+                Text("STAY IN THE ROOM")
+                    .font(.switzer(14))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.roomlyBlack)
+                    .clipShape(Capsule())
+            }
+
+            Spacer().frame(height: 10)
+
+            // CTA secondaire — quitter (danger)
+            Button(action: onLeave) {
+                Text("LEAVE THE ROOM")
+                    .font(.switzer(14))
+                    .foregroundColor(Color(hex: "FF2428"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(hex: "FFEDED"))
+                    .clipShape(Capsule())
+            }
+
+            Spacer().frame(height: 44)
+        }
+        .padding(.horizontal, 20)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.black.opacity(0.10), radius: 24, x: 0, y: -4)
     }
 }
 
