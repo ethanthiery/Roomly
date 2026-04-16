@@ -2,10 +2,11 @@ import SwiftUI
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
+    var onRetap: ((Int) -> Void)? = nil
 
     private let tabs: [(icon: String, iconFilled: String, label: String)] = [
         ("icon_today",   "icon_today_filled",   "Today"),
-        ("icon_cards",   "icon_cards_filled",   "Cards"),
+        ("icon_cards",   "icon_cards_filled",   "Tasks"),
         ("icon_account", "icon_account_filled", "Account")
     ]
 
@@ -13,7 +14,11 @@ struct CustomTabBar: View {
         HStack(spacing: 0) {
             ForEach(tabs.indices, id: \.self) { i in
                 Button {
-                    selectedTab = i
+                    if selectedTab == i {
+                        onRetap?(i)
+                    } else {
+                        selectedTab = i
+                    }
                 } label: {
                     VStack(spacing: 4) {
                         Image(selectedTab == i ? tabs[i].iconFilled : tabs[i].icon)
@@ -23,12 +28,13 @@ struct CustomTabBar: View {
                             .frame(width: 24, height: 24)
                             .foregroundColor(selectedTab == i ? .roomlyBlack : .roomlyGrey25)
                         Text(tabs[i].label)
-                            .font(selectedTab == i ? .switzer(12) : .satoshi(12))
+                            .font(.satoshi(12))
                             .tracking(-0.4)
                             .foregroundColor(selectedTab == i ? .roomlyBlack : .roomlyGrey25)
                     }
                     .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
             }
         }
         .padding(.horizontal, 50)

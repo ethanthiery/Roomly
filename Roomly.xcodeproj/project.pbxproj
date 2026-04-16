@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA3FD8662F904A9600CF76C9 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA3FD8652F904A9600CF76C9 /* SuperwallKit */; };
+		AA80048D2F7EA692000BB14B /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AA80048C2F7EA692000BB14B /* FirebaseAuth */; };
+		AA80048F2F7EA692000BB14B /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = AA80048E2F7EA692000BB14B /* FirebaseFirestore */; };
+		AAB7E4482F87BC0000F208BF /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = AAB7E4472F87BC0000F208BF /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		AA8003202F748309000BB14B /* Roomly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roomly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +30,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAB7E4482F87BC0000F208BF /* FirebaseMessaging in Frameworks */,
+				AA80048D2F7EA692000BB14B /* FirebaseAuth in Frameworks */,
+				AA80048F2F7EA692000BB14B /* FirebaseFirestore in Frameworks */,
+				AA3FD8662F904A9600CF76C9 /* SuperwallKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +76,10 @@
 			);
 			name = Roomly;
 			packageProductDependencies = (
+				AA80048C2F7EA692000BB14B /* FirebaseAuth */,
+				AA80048E2F7EA692000BB14B /* FirebaseFirestore */,
+				AAB7E4472F87BC0000F208BF /* FirebaseMessaging */,
+				AA3FD8652F904A9600CF76C9 /* SuperwallKit */,
 			);
 			productName = Roomly;
 			productReference = AA8003202F748309000BB14B /* Roomly.app */;
@@ -94,6 +109,10 @@
 			);
 			mainGroup = AA8003172F748309000BB14B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA80048B2F7EA692000BB14B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				AA3FD8642F904A9600CF76C9 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA8003212F748309000BB14B /* Products */;
 			projectDirPath = "";
@@ -251,6 +270,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 69279J395C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -263,7 +283,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Roomly.Roomly;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ethan.roomly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -282,6 +302,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 69279J395C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -294,7 +315,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Roomly.Roomly;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ethan.roomly;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -328,6 +349,48 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA3FD8642F904A9600CF76C9 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.14.2;
+			};
+		};
+		AA80048B2F7EA692000BB14B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.11.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA3FD8652F904A9600CF76C9 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA3FD8642F904A9600CF76C9 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
+		};
+		AA80048C2F7EA692000BB14B /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA80048B2F7EA692000BB14B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		AA80048E2F7EA692000BB14B /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA80048B2F7EA692000BB14B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		AAB7E4472F87BC0000F208BF /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA80048B2F7EA692000BB14B /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA8003182F748309000BB14B /* Project object */;
 }

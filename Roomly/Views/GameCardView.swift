@@ -7,6 +7,7 @@ struct GameCardView: View {
     let taskName: String        // "Daily Cleaning"
     let isDark: Bool            // true = dark card background (#170100)
     let isGrayed: Bool          // true = grey label color (Mystery Card)
+    let isSelected: Bool        // true = fond bleu clair sélection
 
     init(
         avatar: String,
@@ -14,7 +15,8 @@ struct GameCardView: View {
         taskImage: String,
         taskName: String,
         isDark: Bool = false,
-        isGrayed: Bool = false
+        isGrayed: Bool = false,
+        isSelected: Bool = false
     ) {
         self.avatar = avatar
         self.winPoints = winPoints
@@ -22,6 +24,7 @@ struct GameCardView: View {
         self.taskName = taskName
         self.isDark = isDark
         self.isGrayed = isGrayed
+        self.isSelected = isSelected
     }
 
     var body: some View {
@@ -53,12 +56,12 @@ struct GameCardView: View {
             }
 
             // Center illustration
-            Spacer()
+            Spacer(minLength: 0)
             Image(taskImage)
                 .resizable()
                 .scaledToFit()
-                .frame(height: 80)
-            Spacer()
+                .frame(height: 65)
+            Spacer(minLength: 0)
 
             // Task name label
             Text(taskName)
@@ -69,9 +72,14 @@ struct GameCardView: View {
                 .background(isDark ? Color.white.opacity(0.15) : Color.white)
                 .clipShape(Capsule())
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 193)
-        .background(isDark ? Color.roomlyBlack : Color.roomlyGrey0)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
+        .background(isDark ? Color.roomlyBlack : isSelected ? Color(hex: "E3EAF0") : Color.roomlyGrey0)
         .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: RoomlyRadius.card)
+                .strokeBorder(isSelected ? Color.roomlyBlack.opacity(0.15) : Color.clear, lineWidth: 1.5)
+        )
     }
 }

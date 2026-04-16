@@ -1,38 +1,71 @@
-//
-//  RoomlyApp.swift
-//  Roomly
-//
-//  Created by Ethan on 25/03/2026.
-//
-
 import SwiftUI
 import CoreText
+import FirebaseCore
 
 @main
 struct RoomlyApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    @StateObject private var userSession      = UserSession()
+    @StateObject private var taskSheetManager = TaskCompleteSheetManager()
+    @StateObject private var luckyDaySheetManager    = LuckyDaySheetManager()
+    @StateObject private var addTaskSheetManager     = AddTaskSheetManager()
+    @StateObject private var deleteTaskSheetManager  = DeleteTaskSheetManager()
+    @StateObject private var leaveRoomSheetManager   = LeaveRoomSheetManager()
+    @StateObject private var taskStore               = TaskStore()
+    @StateObject private var roommateManager  = RoommateManager()
+    @StateObject private var taskScheduler    = TaskScheduler()
+    @StateObject private var streakVM         = StreakViewModel()
+    @StateObject private var grindVM          = GrindViewModel()
+    @StateObject private var membersStore     = MembersStore()
+    @StateObject private var animTracker      = TabAnimationTracker()
+
     init() {
+        FirebaseApp.configure()
         registerFonts()
+        NotificationManager.shared.requestPermission()
     }
+
+    @AppStorage("onboardingCompleted")    private var onboardingCompleted   = false
+    @AppStorage("pendingOnboardingStep") private var pendingOnboardingStep = 0
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if !onboardingCompleted {
+                OnboardingView(initialStep: pendingOnboardingStep) {
+                    pendingOnboardingStep = 0
+                    onboardingCompleted = true
+                }
+                .environmentObject(userSession)
+                .environmentObject(roommateManager)
+            } else if userSession.isSetup {
+                ContentView()
+                    .environmentObject(userSession)
+                    .environmentObject(taskSheetManager)
+                    .environmentObject(luckyDaySheetManager)
+                    .environmentObject(addTaskSheetManager)
+                    .environmentObject(deleteTaskSheetManager)
+                    .environmentObject(leaveRoomSheetManager)
+                    .environmentObject(taskStore)
+                    .environmentObject(roommateManager)
+                    .environmentObject(taskScheduler)
+                    .environmentObject(streakVM)
+                    .environmentObject(grindVM)
+                    .environmentObject(membersStore)
+                    .environmentObject(animTracker)
+            } else {
+                AvatarPickerView()
+                    .environmentObject(userSession)
+            }
         }
     }
 
     private func registerFonts() {
         let fontNames = [
-            "Switzer-Semibold",
-            "Switzer-Medium",
-            "Switzer-Bold",
-            "Switzer-Regular",
-            "Switzer-Light",
-            "Switzer-Black",
-            "Satoshi-Medium",
-            "Satoshi-Regular",
-            "Satoshi-Bold",
-            "Satoshi-Light",
-            "Satoshi-Black"
+            "Switzer-Semibold", "Switzer-Medium", "Switzer-Bold",
+            "Switzer-Regular", "Switzer-Light", "Switzer-Black",
+            "Satoshi-Medium", "Satoshi-Regular", "Satoshi-Bold",
+            "Satoshi-Light", "Satoshi-Black"
         ]
         for name in fontNames {
             for ext in ["otf", "ttf"] {
