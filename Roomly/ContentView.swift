@@ -18,6 +18,8 @@ struct ContentView: View {
     @EnvironmentObject var taskStore: TaskStore
     @EnvironmentObject var taskScheduler: TaskScheduler
     @EnvironmentObject var userSession: UserSession
+    @AppStorage("onboardingCompleted")    private var onboardingCompleted   = false
+    @AppStorage("pendingOnboardingStep") private var pendingOnboardingStep = 0
     @EnvironmentObject var streakVM: StreakViewModel
     @EnvironmentObject var membersStore: MembersStore
 
@@ -68,7 +70,7 @@ struct ContentView: View {
 
                 VStack {
                     Spacer()
-                    TaskCompleteSheet(clothReward: taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1").clothReward)
+                    TaskCompleteSheet(clothReward: taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1")?.clothReward ?? 0)
                         .zIndex(2)
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -90,7 +92,12 @@ struct ContentView: View {
                     VStack(spacing: 0) {
                         Spacer()
                         LeaveRoomSheet(
-                            onLeave:   { leaveRoomSheetManager.hide() /* TODO: quitter */ },
+                            onLeave: {
+                                userSession.leaveRoom()
+                                leaveRoomSheetManager.hide()
+                                pendingOnboardingStep = 6
+                                onboardingCompleted = false
+                            },
                             onDismiss: { leaveRoomSheetManager.hide() }
                         )
                     }
@@ -157,7 +164,7 @@ struct ContentView: View {
         NotificationManager.shared.scheduleAllNotifications(
             hasActiveStreak: streakVM.currentTrailingStreak > 0,
             roommateMaxStreak: membersStore.maxRoommateStreak(excluding: myAvatarId),
-            taskTitle: taskScheduler.task(for: myAvatarId).title,
+            taskTitle: taskScheduler.task(for: myAvatarId)?.title ?? "",
             taskCompleted: taskSheetManager.isTaskCompleted
         )
     }

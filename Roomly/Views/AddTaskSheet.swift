@@ -250,6 +250,6 @@ private struct SuggestedTaskCard: View {
                     .strokeBorder(isSelected ? Color.roomlyBlack.opacity(0.15) : Color.clear, lineWidth: 1.5)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(RoomlyStaticButtonStyle())
     }
 }

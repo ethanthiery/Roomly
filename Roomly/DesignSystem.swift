@@ -66,43 +66,39 @@ extension Color {
     static let roomlyPrimaryPressed = Color(hex: "433131")
 }
 
-/// Bouton primaire — pressé : #000000 / disabled : #E3EAF0 + texte blanc
+/// Bouton primaire — disabled : #E3EAF0 + texte blanc, aucun état press
 struct RoomlyPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(.white)
-            .background(
-                !isEnabled
-                    ? Color(hex: "E3EAF0")
-                    : configuration.isPressed
-                        ? Color(hex: "000000")
-                        : Color.roomlyBlack
-            )
+            .background(!isEnabled ? Color(hex: "E3EAF0") : Color.roomlyBlack)
             .clipShape(Capsule())
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
-/// Bouton secondaire blanc — légère opacité au press
+/// Bouton secondaire blanc — aucun état press
 struct RoomlySecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(Color.white)
             .clipShape(Capsule())
-            .opacity(configuration.isPressed ? 0.75 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
-/// Bouton tertiaire grey-0 — légère opacité au press
+/// Bouton tertiaire grey-0 — aucun état press
 struct RoomlyTertiaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(Color.roomlyGrey0)
             .clipShape(Capsule())
-            .opacity(configuration.isPressed ? 0.75 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+/// Style neutre — aucun effet visuel au press ni au hover
+struct RoomlyStaticButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
     }
 }

@@ -1,7 +1,11 @@
 import SwiftUI
+import SuperwallKit
 
 struct AccountView: View {
     @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
+    @EnvironmentObject var userSession: UserSession
+    @State private var contentVisible = false
+    @EnvironmentObject var animTracker: TabAnimationTracker
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -13,17 +17,18 @@ struct AccountView: View {
                     .foregroundColor(.roomlyBlack)
                     .tracking(-0.5)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
 
                 // MARK: — Profile row
                 HStack(spacing: 12) {
-                    Image("avatar1")
+                    Image(userSession.currentAvatarId ?? "avatar1")
                         .resizable()
                         .scaledToFill()
                         .frame(width: 36, height: 36)
                         .clipShape(Circle())
                         .scaleEffect(x: -1, y: 1)
 
-                    Text("Ethan THIERY")
+                    Text(userSession.username.isEmpty ? "You" : userSession.username)
                         .font(.switzer(20))
                         .foregroundColor(.roomlyBlack)
                         .tracking(-0.5)
@@ -38,9 +43,11 @@ struct AccountView: View {
                         .background(Color.roomlyGrey0)
                         .clipShape(Capsule())
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
 
                 // MARK: — Promo dark card
                 AccountPromoCard()
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
 
                 // MARK: — Your Room section
                 VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
@@ -51,10 +58,19 @@ struct AccountView: View {
 
                     RoomCard()
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
             }
             .padding(.horizontal, RoomlySpacing.screenPadding)
             .padding(.top, 16)
             .padding(.bottom, 100)
+        }
+        .onAppear {
+            if animTracker.shouldAnimate("account") {
+                contentVisible = true
+            } else {
+                var t = Transaction(); t.disablesAnimations = true
+                withTransaction(t) { contentVisible = true }
+            }
         }
     }
 }
@@ -121,8 +137,10 @@ private struct AccountPromoCard: View {
 
                 Spacer(minLength: 0)
 
-                Button {} label: {
-                    Text("GET PRO FOR 40% OFF")
+                Button {
+                    Superwall.shared.register(placement: "get_pro")
+                } label: {
+                    Text("BREAK THE LIMIT")
                         .font(.switzer(14))
                         .foregroundColor(.roomlyBlack)
                         .frame(maxWidth: .infinity)
@@ -131,6 +149,7 @@ private struct AccountPromoCard: View {
                         .background(Color.white)
                         .clipShape(Capsule())
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
             }
             .padding(.horizontal, 12)
             .padding(.top, 24)
@@ -151,9 +170,9 @@ private struct AccountPromoCard: View {
 private struct RoomCard: View {
     @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
     @EnvironmentObject var userSession: UserSession
+    @EnvironmentObject var roommateManager: RoommateManager
 
-    // TODO: remplacer par roommateManager.activeAvatarIds.count quand branché Firebase
-    let roommateCount: Int = 4
+    var roommateCount: Int { roommateManager.activeAvatarIds.count }
     let maxFreeRoomates: Int = 4
 
     var isAtCapacity: Bool { roommateCount >= maxFreeRoomates }
@@ -163,7 +182,7 @@ private struct RoomCard: View {
             // Top row: overlapped avatars + room name pill
             HStack {
                 HStack(spacing: 4) {
-                    ForEach(["avatar1", "avatar2", "avatar3", "avatar4"], id: \.self) { name in
+                    ForEach(roommateManager.activeAvatarIds.prefix(4), id: \.self) { name in
                         Image(name)
                             .resizable()
                             .scaledToFill()
@@ -173,7 +192,7 @@ private struct RoomCard: View {
                     }
                 }
                 Spacer()
-                Text(userSession.roomName.isEmpty ? "My Flat" : userSession.roomName)
+                Text(userSession.roomName.isEmpty ? "My Room" : userSession.roomName)
                     .font(.switzer(14))
                     .foregroundColor(.roomlyBlack)
                     .padding(.horizontal, 12)
@@ -184,16 +203,16 @@ private struct RoomCard: View {
 
             // ADD NEW ROOMATES
             Button {
-                // TODO: < 4 → ajouter un roomate / ≥ 4 → ouvrir paywall PRO
+                Superwall.shared.register(placement: "get_pro")
             } label: {
                 HStack(spacing: 6) {
                     if isAtCapacity {
                         Image("icon_steal")
                             .resizable()
-                            .renderingMode(.template)
+                            .renderingMode(.original)
                             .scaledToFit()
                             .frame(width: 14, height: 14)
-                            .foregroundColor(.white)
+                            .colorInvert()
                     }
                     Text("ADD NEW ROOMATES")
                         .font(.switzer(14))
@@ -204,17 +223,19 @@ private struct RoomCard: View {
                 .background(Color.roomlyBlack)
                 .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
 
             // LEAVE THE ROOM
             Button { leaveRoomSheetManager.show() } label: {
                 Text("LEAVE THE ROOM")
                     .font(.switzer(14))
-                    .foregroundColor(.roomlyBlack)
+                    .foregroundColor(Color(hex: "FF2428"))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+                    .padding(.vertical, 12)
+                    .background(Color(hex: "FFEDED"))
+                    .clipShape(Capsule())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
         }
         .padding(16)
         .background(Color.roomlyGrey0)
@@ -282,6 +303,7 @@ struct LeaveRoomSheet: View {
                     .background(Color.roomlyBlack)
                     .clipShape(Capsule())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
 
             Spacer().frame(height: 10)
 
@@ -295,6 +317,7 @@ struct LeaveRoomSheet: View {
                     .background(Color(hex: "FFEDED"))
                     .clipShape(Capsule())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
 
             Spacer().frame(height: 44)
         }

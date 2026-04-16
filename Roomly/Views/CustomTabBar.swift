@@ -34,6 +34,7 @@ struct CustomTabBar: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
             }
         }
         .padding(.horizontal, 50)

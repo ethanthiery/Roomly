@@ -24,6 +24,8 @@ struct CardsView: View {
     @EnvironmentObject var taskStore: TaskStore
 
     @State private var selectedAvatarId: String? = nil
+    @State private var contentVisible = false
+    @EnvironmentObject var animTracker: TabAnimationTracker
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -38,6 +40,7 @@ struct CardsView: View {
                     .font(.switzer(32))
                     .foregroundColor(.roomlyBlack)
                     .tracking(-0.5)
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
 
                 // MARK: — Intro description
                 HStack(alignment: .top, spacing: 10) {
@@ -56,6 +59,7 @@ struct CardsView: View {
                         .font(.satoshi(16))
                         .foregroundColor(.roomlyBlack)
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
 
                 // MARK: — Cards in game
                 VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
@@ -68,17 +72,34 @@ struct CardsView: View {
                     let gridColumns = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]
                     LazyVGrid(columns: gridColumns, spacing: 20) {
 
-                        // Cards attribuées (non supprimées)
-                        ForEach(["avatar1", "avatar2", "avatar3", "avatar4"], id: \.self) { avatarId in
-                            let task = taskScheduler.task(for: avatarId)
-                            if !taskStore.isRemoved(task.id) {
+                        // Cards attribuées (non supprimées) — liste dynamique des membres du flat
+                        ForEach(roommateManager.activeAvatarIds, id: \.self) { avatarId in
+                            if let task = taskScheduler.task(for: avatarId), !taskStore.isRemoved(task.id) {
                                 deletableCard(avatarId: avatarId, task: task)
                             }
                         }
 
-                        // Tâches en attente (ajoutées mais pas encore attribuées)
-                        ForEach(taskStore.pendingTasks) { pending in
-                            pendingCard(pending)
+                        // Tâches pending — uniquement si le pool dépasse le nombre de membres
+                        let assignedIds = Set(taskScheduler.todayAssignments.values)
+                        let totalTaskCount = TaskData.all.filter { !taskStore.isRemoved($0.id) }.count
+                                          + taskStore.pendingTasks.count
+                        let roommateCount = roommateManager.activeAvatarIds.count
+                        let shouldShowPending = totalTaskCount > roommateCount
+
+                        if shouldShowPending {
+                            // Tâches de base non attribuées aujourd'hui
+                            ForEach(TaskData.all.filter { task in
+                                !assignedIds.contains(task.id) && !taskStore.isRemoved(task.id)
+                            }, id: \.id) { task in
+                                inactivePendingCard(image: task.image, title: task.title)
+                            }
+
+                            // Tâches custom non encore attribuées
+                            ForEach(taskStore.pendingTasks.filter { pending in
+                                !assignedIds.contains(pending.id)
+                            }) { pending in
+                                pendingCard(pending)
+                            }
                         }
 
                         // Day-Off card
@@ -124,7 +145,7 @@ struct CardsView: View {
                             .background(Color.roomlyGrey0)
                             .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(RoomlyStaticButtonStyle())
 
                         // Add Task card
                         Button {
@@ -151,9 +172,10 @@ struct CardsView: View {
                             .background(Color.roomlyGrey0)
                             .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(RoomlyStaticButtonStyle())
                     }
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
 
                 // MARK: — Leaderboard
                 VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
@@ -164,7 +186,7 @@ struct CardsView: View {
                             .tracking(-0.5)
                         Spacer()
                         HStack(spacing: 4) {
-                            Image("avatar1")
+                            Image(userSession.currentAvatarId ?? "avatar1")
                                 .resizable().scaledToFill()
                                 .frame(width: 30, height: 30)
                                 .scaleEffect(x: -1, y: 1)
@@ -181,10 +203,11 @@ struct CardsView: View {
 
                     LeaderboardPodium(myAvatarId: userSession.currentAvatarId ?? "avatar1", allBalances: allMonthlyBalances, activeAvatarIds: roommateManager.activeAvatarIds)
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
 
                 // MARK: — Grind progression
                 VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
-                    Text("Yearly Grind Recap")
+                    Text("Monthly Grind Recap")
                         .font(.switzer(20))
                         .foregroundColor(.roomlyBlack)
                         .tracking(-0.5)
@@ -218,10 +241,19 @@ struct CardsView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.37))
             }
             .padding(.horizontal, RoomlySpacing.screenPadding)
             .padding(.top, 16)
             .padding(.bottom, 100)
+        }
+        .onAppear {
+            if animTracker.shouldAnimate("tasks") {
+                contentVisible = true
+            } else {
+                var t = Transaction(); t.disablesAnimations = true
+                withTransaction(t) { contentVisible = true }
+            }
         }
         .onChange(of: scrollToTopTrigger) { _, _ in
             withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) {
@@ -231,6 +263,58 @@ struct CardsView: View {
         } // ScrollViewReader
 
         } // ZStack
+    }
+
+    // ── Card base task non attribuée aujourd'hui (bench) ──
+    @ViewBuilder
+    private func inactivePendingCard(image: String, title: String) -> some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image("icon_timer")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(.roomlyGrey25)
+                    .frame(width: 30, height: 30)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                Spacer()
+                Text("PENDING")
+                    .font(.switzer(14))
+                    .foregroundColor(.roomlyGrey25)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color.white)
+                    .clipShape(Capsule())
+            }
+            Spacer(minLength: 0)
+            Image(image)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 65)
+                .opacity(0.5)
+            Spacer(minLength: 0)
+            Text(title)
+                .font(.switzer(14))
+                .foregroundColor(.roomlyGrey25)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .background(Color.white)
+                .clipShape(Capsule())
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, minHeight: 193, maxHeight: 193)
+        .background(Color.roomlyGrey0)
+        .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: RoomlyRadius.card)
+                .strokeBorder(
+                    Color.roomlyGrey25.opacity(0.3),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                )
+        )
     }
 
     // ── Card en attente (nouvelle tâche non encore attribuée) ──

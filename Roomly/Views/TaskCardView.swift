@@ -1,4 +1,5 @@
 import SwiftUI
+import SuperwallKit
 
 enum TaskCardStyle {
     case myTask       // Dark "FINISH IT" button
@@ -134,8 +135,20 @@ struct TaskCardView: View {
                 if style == .myTask {
                     Button {
                         if taskSheetManager.isTaskCompleted {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             taskSheetManager.undoCompletion()
                         } else {
+                            // Haptic "giga cool" : double bump lourd + notification warning
+                            let g1 = UIImpactFeedbackGenerator(style: .heavy)
+                            let g2 = UIImpactFeedbackGenerator(style: .heavy)
+                            g1.prepare(); g2.prepare()
+                            g1.impactOccurred()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                                g2.impactOccurred()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                                }
+                            }
                             taskSheetManager.show()
                         }
                     } label: {
@@ -147,8 +160,11 @@ struct TaskCardView: View {
                             .background(taskSheetManager.isTaskCompleted ? Color(hex: "251819") : Color.roomlyBlack)
                             .clipShape(Capsule())
                     }
+                    .buttonStyle(RoomlyStaticButtonStyle())
                 } else {
-                    Button {} label: {
+                    Button {
+                        Superwall.shared.register(placement: "get_pro")
+                    } label: {
                         HStack(spacing: 6) {
                             Image("icon_steal")
                                 .resizable()
@@ -164,7 +180,7 @@ struct TaskCardView: View {
                         .background(Color.white)
                         .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(RoomlyStaticButtonStyle())
                 }
             }
             .padding(12)

@@ -18,6 +18,7 @@ struct RoomlyApp: App {
     @StateObject private var streakVM         = StreakViewModel()
     @StateObject private var grindVM          = GrindViewModel()
     @StateObject private var membersStore     = MembersStore()
+    @StateObject private var animTracker      = TabAnimationTracker()
 
     init() {
         FirebaseApp.configure()
@@ -25,15 +26,18 @@ struct RoomlyApp: App {
         NotificationManager.shared.requestPermission()
     }
 
-    @AppStorage("onboardingCompleted") private var onboardingCompleted = false
+    @AppStorage("onboardingCompleted")    private var onboardingCompleted   = false
+    @AppStorage("pendingOnboardingStep") private var pendingOnboardingStep = 0
 
     var body: some Scene {
         WindowGroup {
             if !onboardingCompleted {
-                OnboardingView {
+                OnboardingView(initialStep: pendingOnboardingStep) {
+                    pendingOnboardingStep = 0
                     onboardingCompleted = true
                 }
                 .environmentObject(userSession)
+                .environmentObject(roommateManager)
             } else if userSession.isSetup {
                 ContentView()
                     .environmentObject(userSession)
@@ -48,6 +52,7 @@ struct RoomlyApp: App {
                     .environmentObject(streakVM)
                     .environmentObject(grindVM)
                     .environmentObject(membersStore)
+                    .environmentObject(animTracker)
             } else {
                 AvatarPickerView()
                     .environmentObject(userSession)

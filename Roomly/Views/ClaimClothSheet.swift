@@ -40,6 +40,7 @@ struct ClaimClothSheet: View {
                             .background(Color.roomlyGrey0)
                             .clipShape(Circle())
                     }
+                    .buttonStyle(RoomlyStaticButtonStyle())
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -87,6 +88,7 @@ struct ClaimClothSheet: View {
                         .background(Color.roomlyBlack)
                         .clipShape(Capsule())
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
                 .padding(.horizontal, 20)
                 .padding(.bottom, 36)
             }

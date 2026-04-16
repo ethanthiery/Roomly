@@ -1,4 +1,5 @@
 import SwiftUI
+import SuperwallKit
 
 struct ClothWalletView: View {
     @EnvironmentObject var streakVM: StreakViewModel
@@ -31,6 +32,7 @@ struct ClothWalletView: View {
                                 .background(Color.roomlyGrey0)
                                 .clipShape(Circle())
                         }
+                        .buttonStyle(RoomlyStaticButtonStyle())
                     }
 
                     // MARK: — Cards
@@ -79,7 +81,7 @@ struct ClothWalletView: View {
                                 .background(Color.roomlyGrey0)
                                 .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(RoomlyStaticButtonStyle())
 
                             // Add Task card
                             Button {
@@ -106,7 +108,7 @@ struct ClothWalletView: View {
                                 .background(Color.roomlyGrey0)
                                 .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(RoomlyStaticButtonStyle())
                         }
                     }
 
@@ -219,8 +221,10 @@ private struct WalletPromoCard: View {
 
                 Spacer(minLength: 0)
 
-                Button {} label: {
-                    Text("GET PRO FOR 40% OFF")
+                Button {
+                    Superwall.shared.register(placement: "get_pro")
+                } label: {
+                    Text("BREAK THE LIMIT")
                         .font(.switzer(14))
                         .foregroundColor(.roomlyBlack)
                         .frame(maxWidth: .infinity)
@@ -229,6 +233,7 @@ private struct WalletPromoCard: View {
                         .background(Color.white)
                         .clipShape(Capsule())
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 12)

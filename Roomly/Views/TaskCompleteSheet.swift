@@ -70,6 +70,7 @@ struct TaskCompleteSheet: View {
                     .background(Color.roomlyBlack)
                     .clipShape(Capsule())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
 
             // Espacement bouton → bas : 44px
             Spacer().frame(height: 44)

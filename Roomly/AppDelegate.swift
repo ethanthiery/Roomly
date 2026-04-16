@@ -1,5 +1,6 @@
 import UIKit
 import FirebaseMessaging
+import SuperwallKit
 
 /// UIApplicationDelegate used exclusively for Firebase Messaging (FCM token).
 /// Attached via @UIApplicationDelegateAdaptor in RoomlyApp.
@@ -9,6 +10,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        Superwall.configure(apiKey: "pk_U2fyi3vKRpCqwa5UfzNzU")
         Messaging.messaging().delegate = self
         return true
     }

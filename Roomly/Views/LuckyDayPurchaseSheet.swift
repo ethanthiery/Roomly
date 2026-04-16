@@ -133,6 +133,7 @@ struct LuckyDayPurchaseSheet: View {
                     .background(canAfford ? Color.roomlyBlack : Color.roomlyGrey0.opacity(0.5))
                     .clipShape(Capsule())
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
                 .disabled(!canAfford)
             }
 

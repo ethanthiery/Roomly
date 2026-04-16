@@ -69,8 +69,7 @@ extension AvatarInfo {
 
     /// Génère le badge dynamiquement selon si c'est le user courant ou non.
     static func ownerLabel(for avatarId: String) -> String {
-        let myId       = UserDefaults.standard.string(forKey: "currentAvatarId") ?? ""
-        let myUsername = UserDefaults.standard.string(forKey: "username") ?? ""
+        let myId = UserDefaults.standard.string(forKey: "currentAvatarId") ?? ""
         if avatarId == myId { return "" }  // Pas de badge sur sa propre carte
         return info(for: avatarId).ownerLabel
     }

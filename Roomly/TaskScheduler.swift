@@ -44,11 +44,9 @@ final class TaskScheduler: ObservableObject {
 
     // MARK: Public API
 
-    func task(for avatarId: String) -> TaskData {
-        let pool = currentTaskPool
-        let taskId = todayAssignments[avatarId] ?? pool.first ?? TaskData.all[0].id
-        let avatarInfo = AvatarInfo.info(for: avatarId)
-
+    /// Retourne la tâche assignée à `avatarId` aujourd'hui, ou `nil` si ce roommate n'a pas de tâche.
+    func task(for avatarId: String) -> TaskData? {
+        guard let taskId = todayAssignments[avatarId] else { return nil }
         let ownerLabel = AvatarInfo.ownerLabel(for: avatarId)
 
         // Tâche de base ?
@@ -79,7 +77,7 @@ final class TaskScheduler: ObservableObject {
             )
         }
 
-        return TaskData.all[0]
+        return nil
     }
 
     // MARK: Private — generation
@@ -88,16 +86,17 @@ final class TaskScheduler: ObservableObject {
         let todayStr = dateString(Date())
         let key = "taskAssignments_\(todayStr)"
 
+        let pool = currentTaskPool
+        let expectedCount = min(pool.count, avatarIds.count)
         if let saved = UserDefaults.standard.dictionary(forKey: key) as? [String: String],
-           Set(saved.keys) == Set(avatarIds) {
+           saved.count == expectedCount,
+           saved.keys.allSatisfy({ avatarIds.contains($0) }) {
             todayAssignments = saved
             return
         }
 
-        let pool = currentTaskPool
         let yesterdayStr = dateString(Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
-        let defaultOrder = Dictionary(uniqueKeysWithValues: zip(avatarIds, (pool + pool).prefix(avatarIds.count)))
-        let yesterday = UserDefaults.standard.dictionary(forKey: "taskAssignments_\(yesterdayStr)") as? [String: String] ?? defaultOrder
+        let yesterday = UserDefaults.standard.dictionary(forKey: "taskAssignments_\(yesterdayStr)") as? [String: String] ?? [:]
 
         let newAssignments = shuffleAvoiding(yesterday, pool: pool)
         todayAssignments = newAssignments
@@ -109,8 +108,8 @@ final class TaskScheduler: ObservableObject {
         let todayStr = dateString(Date())
         firestoreListener = FirebaseManager.shared.listenToTaskAssignments(forDate: todayStr) { [weak self] remote in
             guard let self else { return }
-            // On accepte les données Firestore seulement si elles couvrent tous les avatars actifs
-            guard Set(remote.keys) == Set(self.avatarIds) else { return }
+            // On accepte les données Firestore si les clés sont des avatars valides
+            guard remote.keys.allSatisfy({ self.avatarIds.contains($0) }) else { return }
             DispatchQueue.main.async {
                 self.todayAssignments = remote
                 let key = "taskAssignments_\(todayStr)"
@@ -120,27 +119,35 @@ final class TaskScheduler: ObservableObject {
     }
 
     private func shuffleAvoiding(_ previous: [String: String], pool: [String]) -> [String: String] {
-        // Si le pool est plus petit que le nombre d'avatars, on le cycle
-        func expand(_ arr: [String], to count: Int) -> [String] {
-            guard !arr.isEmpty else { return [] }
-            var out = arr
-            while out.count < count { out += arr }
-            return Array(out.prefix(count))
-        }
+        guard !pool.isEmpty else { return [:] }
 
-        let fallback = Dictionary(uniqueKeysWithValues: zip(avatarIds, expand(pool, to: avatarIds.count)))
-        var result = fallback
+        // Nombre de roommates qui auront une tâche = min(tâches dispo, roommates)
+        let assignCount = min(pool.count, avatarIds.count)
+
+        var result: [String: String] = [:]
 
         for attempt in 0..<100 {
-            let shuffled = deterministicShuffle(pool, seed: "\(dateString(Date()))_\(attempt)")
-            let candidate = Dictionary(uniqueKeysWithValues: zip(avatarIds, expand(shuffled, to: avatarIds.count)))
-            let hasRepeat = avatarIds.contains { avatarId in
+            // Mélanger les tâches
+            let shuffledPool = deterministicShuffle(pool, seed: "\(dateString(Date()))_\(attempt)")
+            // Mélanger les avatars pour répartir équitablement qui n'a pas de tâche
+            let shuffledAvatars = deterministicShuffle(avatarIds, seed: "\(dateString(Date()))_av_\(attempt)")
+            let selectedAvatars = Array(shuffledAvatars.prefix(assignCount))
+
+            var candidate: [String: String] = [:]
+            for (i, avatarId) in selectedAvatars.enumerated() {
+                candidate[avatarId] = shuffledPool[i]
+            }
+
+            // Vérifier qu'aucun avatar ne garde la même tâche que hier
+            let hasRepeat = selectedAvatars.contains { avatarId in
                 previous[avatarId] != nil && candidate[avatarId] == previous[avatarId]
             }
             if !hasRepeat {
                 result = candidate
                 break
             }
+            // Si on n'a pas trouvé de shuffle sans répétition, on garde le dernier candidate
+            result = candidate
         }
         return result
     }

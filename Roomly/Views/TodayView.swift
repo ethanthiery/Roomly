@@ -1,4 +1,5 @@
 import SwiftUI
+import SuperwallKit
 
 private struct ScrollOffsetKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
@@ -11,6 +12,8 @@ struct TodayView: View {
     @State private var topAnchor: CGFloat? = nil
     @State private var scrolledRoommateId: String? = nil
     @State private var showWallet = false
+    @State private var contentVisible = false
+    @EnvironmentObject var animTracker: TabAnimationTracker
     @EnvironmentObject var streakVM: StreakViewModel
     @EnvironmentObject var taskScheduler: TaskScheduler
     @EnvironmentObject var taskSheetManager: TaskCompleteSheetManager
@@ -49,34 +52,48 @@ struct TodayView: View {
 
                     Color.clear.frame(height: 0).id("scrollTop")
 
+                    // 1 — Titre
                     Text("Welcome, \(userSession.currentName) !")
                         .font(.switzer(32))
                         .foregroundColor(.roomlyBlack)
                         .tracking(-0.5)
+                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
 
                     VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
 
+                        // 2 — Streak
                         StreakCard(viewModel: streakVM)
-                        PromoCard()
+                            .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
 
-                        // Your Task Today
+                        // 3 — Promo
+                        PromoCard()
+                            .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
+
+                        // 4 — Your Task Today
                         VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
                             SectionTitle("Your Task Today")
-                            let myTask = taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1")
-                            TaskCardView(
-                                ownerAvatar: nil,
-                                ownerLabel: "FINISH IT & GET \(myTask.clothReward)",
-                                timeLeft: taskScheduler.timeLeftString,
-                                taskTitle: myTask.title,
-                                taskSubtitle: myTask.subtitle,
-                                progress: "1/3",
-                                taskImage: myTask.image,
-                                style: .myTask,
-                                clothReward: myTask.clothReward
-                            )
+                            if let myTask = taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1") {
+                                TaskCardView(
+                                    ownerAvatar: nil,
+                                    ownerLabel: "FINISH IT & GET \(myTask.clothReward)",
+                                    timeLeft: taskScheduler.timeLeftString,
+                                    taskTitle: myTask.title,
+                                    taskSubtitle: myTask.subtitle,
+                                    progress: "1/3",
+                                    taskImage: myTask.image,
+                                    style: .myTask,
+                                    clothReward: myTask.clothReward
+                                )
+                            } else {
+                                Text("No task assigned today.")
+                                    .font(.satoshi(16))
+                                    .foregroundColor(.roomlyGrey25)
+                                    .padding(.vertical, 8)
+                            }
                         }
+                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
 
-                        // Roommates Tasks
+                        // 5 — Roommates Tasks
                         VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
                             HStack {
                                 SectionTitle("Roomates Tasks")
@@ -94,22 +111,23 @@ struct TodayView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 0) {
                                         ForEach(roommateManager.activeAvatarIds.filter { $0 != (userSession.currentAvatarId ?? "avatar1") }, id: \.self) { avatarId in
-                                            let t = taskScheduler.task(for: avatarId)
-                                            let info = AvatarInfo.info(for: avatarId)
-                                            TaskCardView(
-                                                ownerAvatar: avatarId,
-                                                ownerLabel: info.ownerLabel,
-                                                timeLeft: taskScheduler.timeLeftString,
-                                                taskTitle: t.title,
-                                                taskSubtitle: t.subtitle,
-                                                progress: "0/1 COMPLETE",
-                                                taskImage: t.image,
-                                                style: .roommateTask,
-                                                clothReward: t.clothReward
-                                            )
-                                            .padding(.horizontal, RoomlySpacing.screenPadding)
-                                            .frame(width: geo.size.width)
-                                            .id(avatarId)
+                                            if let t = taskScheduler.task(for: avatarId) {
+                                                let info = AvatarInfo.info(for: avatarId)
+                                                TaskCardView(
+                                                    ownerAvatar: avatarId,
+                                                    ownerLabel: info.ownerLabel,
+                                                    timeLeft: taskScheduler.timeLeftString,
+                                                    taskTitle: t.title,
+                                                    taskSubtitle: t.subtitle,
+                                                    progress: "0/1 COMPLETE",
+                                                    taskImage: t.image,
+                                                    style: .roommateTask,
+                                                    clothReward: t.clothReward
+                                                )
+                                                .padding(.horizontal, RoomlySpacing.screenPadding)
+                                                .frame(width: geo.size.width)
+                                                .id(avatarId)
+                                            }
                                         }
                                     }
                                     .scrollTargetLayout()
@@ -123,11 +141,20 @@ struct TodayView: View {
                             .padding(.horizontal, -RoomlySpacing.screenPadding)
                             .frame(height: 181)
                         }
+                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.37))
                     }
                 }
                 .padding(.horizontal, RoomlySpacing.screenPadding)
                 .padding(.top, 8)
                 .padding(.bottom, 100)
+                .onAppear {
+                    if animTracker.shouldAnimate("today") {
+                        contentVisible = true
+                    } else {
+                        var t = Transaction(); t.disablesAnimations = true
+                        withTransaction(t) { contentVisible = true }
+                    }
+                }
                 .background(
                     GeometryReader { geo in
                         Color.clear
@@ -158,12 +185,31 @@ struct TodayView: View {
     }
 }
 
+// MARK: - Cascade Reveal Modifier
+
+struct CascadeReveal: ViewModifier {
+    let visible: Bool
+    let delay: Double
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: visible ? 0 : 28)
+            .opacity(visible ? 1 : 0)
+            .animation(.spring(response: 0.5, dampingFraction: 0.85).delay(delay), value: visible)
+    }
+}
+
 // MARK: - Subviews
 
 private struct AvatarRowView: View {
+    @EnvironmentObject var userSession: UserSession
+    @EnvironmentObject var roommateManager: RoommateManager
+
     var body: some View {
+        let myId = userSession.currentAvatarId ?? "avatar1"
         HStack(spacing: 6) {
-            Image("avatar1")
+            // Avatar de l'utilisateur connecté
+            Image(myId)
                 .resizable().scaledToFill()
                 .frame(width: 30, height: 30)
                 .scaleEffect(x: -1, y: 1)
@@ -171,8 +217,9 @@ private struct AvatarRowView: View {
             Rectangle()
                 .fill(Color(hex: "E8EAED"))
                 .frame(width: 1, height: 24)
+            // Avatars des roommates (tous sauf l'utilisateur)
             HStack(spacing: 0) {
-                ForEach(["avatar2", "avatar3", "avatar4"], id: \.self) { name in
+                ForEach(roommateManager.activeAvatarIds.filter { $0 != myId }, id: \.self) { name in
                     Image(name)
                         .resizable().scaledToFill()
                         .frame(width: 30, height: 30)
@@ -186,7 +233,14 @@ private struct AvatarRowView: View {
 
 private struct GetProButton: View {
     var body: some View {
-        Button {} label: {
+        Button {
+            let handler = PaywallPresentationHandler()
+            handler.onPresent { _ in print("✅ Paywall presented") }
+            handler.onDismiss { _, _ in print("✅ Paywall dismissed") }
+            handler.onSkip { reason in print("⚠️ Paywall skipped: \(reason)") }
+            handler.onError { error in print("❌ Paywall error: \(error)") }
+            Superwall.shared.register(placement: "get_pro", handler: handler)
+        } label: {
             Text("GET PRO")
                 .font(.switzer(14))
                 .foregroundColor(.white)
@@ -337,8 +391,8 @@ private struct PromoCard: View {
                     .minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 0)
-                Button {} label: {
-                    Text("GET PRO FOR 40% OFF")
+                Button { Superwall.shared.register(placement: "get_pro") } label: {
+                    Text("BREAK THE LIMIT")
                         .font(.switzer(14))
                         .foregroundColor(.roomlyBlack)
                         .frame(maxWidth: .infinity)
@@ -347,6 +401,7 @@ private struct PromoCard: View {
                         .background(Color.white)
                         .clipShape(Capsule())
                 }
+                .buttonStyle(RoomlyStaticButtonStyle())
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 12)

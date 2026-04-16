@@ -38,4 +38,15 @@ class UserSession: ObservableObject {
     func setRoomName(_ name: String) {
         roomName = name
     }
+
+    /// Quitte la room : efface le nom de la room et les assignments du jour
+    func leaveRoom() {
+        roomName = ""
+        // Efface les assignments de tâches pour repartir proprement
+        let today = {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: Date())
+        }()
+        UserDefaults.standard.removeObject(forKey: "taskAssignments_\(today)")
+    }
 }

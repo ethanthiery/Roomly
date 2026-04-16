@@ -61,6 +61,7 @@ struct DeleteTaskSheet: View {
                     .background(Color.roomlyBlack)
                     .clipShape(Capsule())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
 
             Spacer().frame(height: 44)
         }
