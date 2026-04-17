@@ -138,15 +138,16 @@ struct TaskCardView: View {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             taskSheetManager.undoCompletion()
                         } else {
-                            // Haptic "giga cool" : double bump lourd + notification warning
+                            // Haptic récompense : double bump lourd + notification de succès
                             let g1 = UIImpactFeedbackGenerator(style: .heavy)
                             let g2 = UIImpactFeedbackGenerator(style: .heavy)
-                            g1.prepare(); g2.prepare()
+                            let success = UINotificationFeedbackGenerator()
+                            g1.prepare(); g2.prepare(); success.prepare()
                             g1.impactOccurred()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                                 g2.impactOccurred()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                                    success.notificationOccurred(.success)
                                 }
                             }
                             taskSheetManager.show()

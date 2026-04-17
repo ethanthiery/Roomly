@@ -11,9 +11,9 @@ struct TodayView: View {
     @State private var showHeaderBorder = false
     @State private var topAnchor: CGFloat? = nil
     @State private var scrolledRoommateId: String? = nil
-    @State private var showWallet = false
     @State private var contentVisible = false
     @EnvironmentObject var animTracker: TabAnimationTracker
+    @EnvironmentObject var walletSheetManager: WalletSheetManager
     @EnvironmentObject var streakVM: StreakViewModel
     @EnvironmentObject var taskScheduler: TaskScheduler
     @EnvironmentObject var taskSheetManager: TaskCompleteSheetManager
@@ -29,7 +29,7 @@ struct TodayView: View {
                 GetProButton()
                 Spacer()
                 ChiffonBalanceButton(count: "\(streakVM.clothBalance)") {
-                    showWallet = true
+                    walletSheetManager.show()
                 }
             }
             .padding(.horizontal, RoomlySpacing.screenPadding)
@@ -137,7 +137,7 @@ struct TodayView: View {
                                 .scrollTargetBehavior(.viewAligned)
                                 .scrollPosition(id: $scrolledRoommateId)
                                 .onChange(of: scrolledRoommateId) { _, _ in
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                                 }
                             }
                             .padding(.horizontal, -RoomlySpacing.screenPadding)
@@ -179,10 +179,6 @@ struct TodayView: View {
             } // ScrollViewReader
         }
         .background(Color.white.ignoresSafeArea(edges: .top))
-        .fullScreenCover(isPresented: $showWallet) {
-            ClothWalletView()
-                .environmentObject(streakVM)
-        }
         // Les cloths sont versés le dimanche via claimToday() — pas d'ajout immédiat ici.
     }
 }

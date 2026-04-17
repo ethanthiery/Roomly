@@ -8,39 +8,38 @@ struct ClothWalletView: View {
     @State private var showLuckyDay  = false
     @State private var showAddTask   = false
     @EnvironmentObject var taskStore: TaskStore
+    @EnvironmentObject var taskScheduler: TaskScheduler
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color.white.ignoresSafeArea()
+            VStack(alignment: .leading, spacing: 0) {
 
-            // ── Contenu scrollable ──
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
+                // ── Handle indicator (12px top, bar, 12px bottom) ──
+                HStack {
+                    Spacer()
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(hex: "E3EAF0"))
+                        .frame(width: 30, height: 4)
+                    Spacer()
+                }
+                .padding(.top, 12)
+                .padding(.bottom, 12)
 
-                    // MARK: — Header : titre gauche + croix droite
-                    HStack(alignment: .top) {
-                        Text("Spend Your Cloths")
-                            .font(.switzer(28))
-                            .foregroundColor(.roomlyBlack)
-                            .tracking(-0.5)
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.roomlyBlack)
-                                .frame(width: 32, height: 32)
-                                .background(Color.roomlyGrey0)
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(RoomlyStaticButtonStyle())
-                    }
+                // MARK: — Title
+                Text("Spend Your Cloths")
+                    .font(.switzer(28))
+                    .foregroundColor(.roomlyBlack)
+                    .tracking(-0.5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    // MARK: — Cards
-                    VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
-                        HStack(spacing: 20) {
+                Spacer().frame(height: RoomlySpacing.sectionGap)
+
+                // MARK: — Cards
+                VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
+                    HStack(spacing: 20) {
                             // Lucky Day card — tappable
                             Button {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                                 withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = true }
                             } label: {
                                 VStack(spacing: 8) {
@@ -85,7 +84,7 @@ struct ClothWalletView: View {
 
                             // Add Task card
                             Button {
-                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                                 showAddTask = true
                             } label: {
                                 VStack(spacing: 8) {
@@ -112,17 +111,12 @@ struct ClothWalletView: View {
                         }
                     }
 
-                    // MARK: — Coming soon
-                    Text("More features coming soon.")
-                        .font(.satoshi(12))
-                        .foregroundColor(.roomlyGrey25)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.bottom, 8)
-                }
-                .padding(.horizontal, RoomlySpacing.screenPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 100)
+                Spacer().frame(height: 44)
             }
+            .padding(.horizontal, RoomlySpacing.screenPadding)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .shadow(color: Color.black.opacity(0.10), radius: 24, x: 0, y: -4)
 
             // ── Overlay Lucky Day sheet ──
             if showLuckyDay {
@@ -137,6 +131,9 @@ struct ClothWalletView: View {
                     LuckyDayPurchaseSheet(onDismiss: {
                         withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false }
                     })
+                    .swipeDownToDismiss {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 1.0)) { showLuckyDay = false }
+                    }
                     .zIndex(2)
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -144,11 +141,11 @@ struct ClothWalletView: View {
                 .zIndex(2)
             }
         }
-        .ignoresSafeArea(edges: .bottom)
         .fullScreenCover(isPresented: $showAddTask) {
             AddTaskSheet(localDismiss: { showAddTask = false })
                 .environmentObject(AddTaskSheetManager())
                 .environmentObject(taskStore)
+                .environmentObject(taskScheduler)
         }
     }
 }

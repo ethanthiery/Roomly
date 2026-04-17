@@ -59,7 +59,13 @@ struct TaskCompleteSheet: View {
 
             // CTA
             Button {
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                let impact = UIImpactFeedbackGenerator(style: .heavy)
+                let success = UINotificationFeedbackGenerator()
+                impact.prepare(); success.prepare()
+                impact.impactOccurred()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                    success.notificationOccurred(.success)
+                }
                 sheetManager.confirmCompleted(reward: clothReward)
             } label: {
                 Text("CONFIRM COMPLETED")

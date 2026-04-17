@@ -76,7 +76,13 @@ struct ClaimClothSheet: View {
 
                 // CTA button
                 Button {
-                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                    let impact = UIImpactFeedbackGenerator(style: .heavy)
+                    let success = UINotificationFeedbackGenerator()
+                    impact.prepare(); success.prepare()
+                    impact.impactOccurred()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                        success.notificationOccurred(.success)
+                    }
                     viewModel.claimToday()
                     isPresented = false
                 } label: {

@@ -30,6 +30,7 @@ struct AddTaskSheet: View {
     var localDismiss: (() -> Void)? = nil
     @EnvironmentObject var manager: AddTaskSheetManager
     @EnvironmentObject var taskStore: TaskStore
+    @EnvironmentObject var taskScheduler: TaskScheduler
 
     @State private var searchText = ""
     @State private var selected: SuggestedTask? = nil
@@ -162,12 +163,18 @@ struct AddTaskSheet: View {
             // ── CTA ──
             Button {
                 guard let sel = selected else { return }
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                let impact = UIImpactFeedbackGenerator(style: .medium)
+                let success = UINotificationFeedbackGenerator()
+                impact.prepare(); success.prepare()
+                impact.impactOccurred()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                    success.notificationOccurred(.success)
+                }
                 if taskStore.isRemoved(sel.id) {
                     // Tâche supprimée du jeu → on la restaure directement
                     taskStore.restore(sel.id)
                 } else {
-                    // Nouvelle tâche → on l'ajoute en "en attente"
+                    // Nouvelle tâche → on l'ajoute au pool
                     taskStore.addPending(PendingTask(
                         id: sel.id,
                         title: sel.title,
@@ -175,6 +182,9 @@ struct AddTaskSheet: View {
                         clothReward: sel.clothReward
                     ))
                 }
+                // Si un roommate n'a pas de tâche aujourd'hui, on lui attribue la nouvelle directement.
+                // Sinon (tous les avatars ont déjà une tâche), elle reste dans le pool en "pending".
+                taskScheduler.assignToUnassignedAvatar(taskId: sel.id)
                 if let localDismiss { localDismiss() } else { manager.hide() }
             } label: {
                 Text(selected != nil

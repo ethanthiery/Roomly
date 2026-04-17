@@ -104,7 +104,7 @@ struct CardsView: View {
 
                         // Day-Off card
                         Button {
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                             luckyDaySheetManager.show()
                         } label: {
                             VStack(spacing: 8) {
@@ -149,7 +149,7 @@ struct CardsView: View {
 
                         // Add Task card
                         Button {
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                             addTaskSheetManager.show()
                         } label: {
                             VStack(spacing: 8) {

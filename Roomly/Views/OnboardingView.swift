@@ -72,7 +72,7 @@ struct OnboardingView: View {
                     // Skip (steps 1–5 uniquement)
                     if step >= 1 && step <= 5 {
                         Button {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                             step = skipDestination
                         } label: {
                             Text("Skip")
@@ -372,7 +372,7 @@ struct OnboardingView: View {
             Spacer()
 
             ctaButton(label: "LET'S GO", enabled: selectedAvatar != nil) {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 if let avatar = selectedAvatar {
                     userSession.setup(avatarId: avatar)
                     roommateManager.updateUserAvatar(avatar)
@@ -413,7 +413,7 @@ struct OnboardingView: View {
             VStack(spacing: 10) {
                 // JOIN A ROOM — principal
                 ctaButton(label: "JOIN A ROOM", enabled: true) {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     step = 9
                 }
 
@@ -517,7 +517,7 @@ struct OnboardingView: View {
     // MARK: - Helpers
 
     private func advance() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
         step += 1
     }
 

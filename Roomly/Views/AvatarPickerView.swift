@@ -41,7 +41,7 @@ struct AvatarPickerView: View {
                         isSelected: selected == avatar.id
                     )
                     .onTapGesture {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        UISelectionFeedbackGenerator().selectionChanged()
                         selected = avatar.id
                     }
                 }

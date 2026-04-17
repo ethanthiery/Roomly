@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var scrollTopTrigger = [0: 0, 1: 0, 2: 0]
     @EnvironmentObject var taskSheetManager: TaskCompleteSheetManager
     @EnvironmentObject var luckyDaySheetManager: LuckyDaySheetManager
+    @EnvironmentObject var walletSheetManager: WalletSheetManager
     @EnvironmentObject var addTaskSheetManager: AddTaskSheetManager
     @EnvironmentObject var deleteTaskSheetManager: DeleteTaskSheetManager
     @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
@@ -53,11 +54,26 @@ struct ContentView: View {
                     LuckyDayPurchaseSheet(onDismiss: {
                         withAnimation { luckyDaySheetManager.hide() }
                     })
+                    .swipeDownToDismiss { luckyDaySheetManager.hide() }
                     .zIndex(2)
                 }
                 .ignoresSafeArea(edges: .bottom)
                 .transition(.move(edge: .bottom))
                 .zIndex(2)
+            }
+
+            // ── Cloth Wallet bottom sheet (au-dessus de la navbar) ──
+            if walletSheetManager.isPresented {
+                Color.black.opacity(0.15)
+                    .ignoresSafeArea()
+                    .onTapGesture { walletSheetManager.hide() }
+                    .transition(.opacity)
+                    .zIndex(3)
+
+                ClothWalletView()
+                    .swipeDownToDismiss { walletSheetManager.hide() }
+                    .transition(.move(edge: .bottom))
+                    .zIndex(4)
             }
 
             // Dim overlay + bottom sheet (au-dessus de la navbar)
@@ -71,6 +87,7 @@ struct ContentView: View {
                 VStack {
                     Spacer()
                     TaskCompleteSheet(clothReward: taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1")?.clothReward ?? 0)
+                        .swipeDownToDismiss { taskSheetManager.hide() }
                         .zIndex(2)
                 }
                 .ignoresSafeArea(edges: .bottom)
@@ -79,6 +96,7 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea(edges: .bottom)
+        .animation(.spring(response: 0.5, dampingFraction: 1.0), value: walletSheetManager.isPresented)
         // Leave room sheet — au-dessus de la navbar
         .overlay {
             ZStack(alignment: .bottom) {
@@ -100,6 +118,7 @@ struct ContentView: View {
                             },
                             onDismiss: { leaveRoomSheetManager.hide() }
                         )
+                        .swipeDownToDismiss { leaveRoomSheetManager.hide() }
                     }
                     .ignoresSafeArea(edges: .bottom)
                     .transition(.move(edge: .bottom))
@@ -124,6 +143,7 @@ struct ContentView: View {
                         DeleteTaskSheet()
                             .environmentObject(deleteTaskSheetManager)
                             .environmentObject(taskStore)
+                            .swipeDownToDismiss { deleteTaskSheetManager.hide() }
                     }
                     .ignoresSafeArea(edges: .bottom)
                     .transition(.move(edge: .bottom))
@@ -137,6 +157,7 @@ struct ContentView: View {
             AddTaskSheet()
                 .environmentObject(addTaskSheetManager)
                 .environmentObject(taskStore)
+                .environmentObject(taskScheduler)
         }
         .onAppear {
             scheduleNotifications()

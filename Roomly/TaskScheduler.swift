@@ -44,6 +44,27 @@ final class TaskScheduler: ObservableObject {
 
     // MARK: Public API
 
+    /// Tente d'assigner immédiatement `taskId` à un avatar qui n'a pas de tâche aujourd'hui.
+    /// - Returns: `true` si la tâche a été attribuée à un avatar libre, `false` si tous les avatars ont déjà une tâche (la tâche reste alors dans le pool pour les jours suivants).
+    @discardableResult
+    func assignToUnassignedAvatar(taskId: String) -> Bool {
+        // Cherche un avatar sans tâche aujourd'hui
+        guard let target = avatarIds.first(where: { todayAssignments[$0] == nil }) else {
+            return false
+        }
+        // Évite de réassigner si la tâche est déjà attribuée à quelqu'un
+        guard !todayAssignments.values.contains(taskId) else { return false }
+
+        todayAssignments[target] = taskId
+
+        // Persist localement + sync Firebase
+        let todayStr = dateString(Date())
+        let key = "taskAssignments_\(todayStr)"
+        UserDefaults.standard.set(todayAssignments, forKey: key)
+        FirebaseManager.shared.uploadTaskAssignments(todayAssignments, forDate: todayStr)
+        return true
+    }
+
     /// Retourne la tâche assignée à `avatarId` aujourd'hui, ou `nil` si ce roommate n'a pas de tâche.
     func task(for avatarId: String) -> TaskData? {
         guard let taskId = todayAssignments[avatarId] else { return nil }

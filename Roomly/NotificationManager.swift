@@ -87,6 +87,7 @@ final class NotificationManager: NSObject {
 
     private func schedule1655(taskTitle: String) {
         let content = UNMutableNotificationContent()
+        content.subtitle = "URGENT"
         content.title = "Your task is still waiting"
         content.body = "\(taskTitle) won't do itself. What are you waiting for?"
         content.sound = .default
