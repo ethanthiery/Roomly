@@ -6,24 +6,23 @@ import FirebaseCore
 struct RoomlyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    @StateObject private var userSession      = UserSession()
-    @StateObject private var taskSheetManager = TaskCompleteSheetManager()
-    @StateObject private var luckyDaySheetManager    = LuckyDaySheetManager()
-    @StateObject private var addTaskSheetManager     = AddTaskSheetManager()
-    @StateObject private var deleteTaskSheetManager  = DeleteTaskSheetManager()
-    @StateObject private var leaveRoomSheetManager   = LeaveRoomSheetManager()
-    @StateObject private var taskStore               = TaskStore()
-    @StateObject private var roommateManager  = RoommateManager()
-    @StateObject private var taskScheduler    = TaskScheduler()
-    @StateObject private var streakVM         = StreakViewModel()
-    @StateObject private var grindVM          = GrindViewModel()
-    @StateObject private var membersStore     = MembersStore()
-    @StateObject private var animTracker      = TabAnimationTracker()
+    @StateObject private var userSession           = UserSession()
+    @StateObject private var taskSheetManager      = TaskCompleteSheetManager()
+    @StateObject private var luckyDaySheetManager  = LuckyDaySheetManager()
+    @StateObject private var addTaskSheetManager   = AddTaskSheetManager()
+    @StateObject private var deleteTaskSheetManager = DeleteTaskSheetManager()
+    @StateObject private var leaveRoomSheetManager = LeaveRoomSheetManager()
+    @StateObject private var taskStore             = TaskStore()
+    @StateObject private var roommateManager       = RoommateManager()
+    @StateObject private var taskScheduler         = TaskScheduler()
+    @StateObject private var streakVM              = StreakViewModel()
+    @StateObject private var grindVM               = GrindViewModel()
+    @StateObject private var membersStore          = MembersStore()
+    @StateObject private var animTracker           = TabAnimationTracker()
 
     init() {
         FirebaseApp.configure()
-        registerFonts()
-        NotificationManager.shared.requestPermission()
+        DispatchQueue.global(qos: .userInitiated).async { RoomlyApp.registerFonts() }
     }
 
     @AppStorage("onboardingCompleted")    private var onboardingCompleted   = false
@@ -31,36 +30,42 @@ struct RoomlyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if !onboardingCompleted {
-                OnboardingView(initialStep: pendingOnboardingStep) {
-                    pendingOnboardingStep = 0
-                    onboardingCompleted = true
-                }
-                .environmentObject(userSession)
-                .environmentObject(roommateManager)
-            } else if userSession.isSetup {
-                ContentView()
+            Group {
+                if !onboardingCompleted {
+                    OnboardingView(initialStep: pendingOnboardingStep) {
+                        pendingOnboardingStep = 0
+                        animTracker.reset()
+                        onboardingCompleted = true
+                    }
                     .environmentObject(userSession)
-                    .environmentObject(taskSheetManager)
-                    .environmentObject(luckyDaySheetManager)
-                    .environmentObject(addTaskSheetManager)
-                    .environmentObject(deleteTaskSheetManager)
-                    .environmentObject(leaveRoomSheetManager)
-                    .environmentObject(taskStore)
                     .environmentObject(roommateManager)
-                    .environmentObject(taskScheduler)
-                    .environmentObject(streakVM)
-                    .environmentObject(grindVM)
-                    .environmentObject(membersStore)
-                    .environmentObject(animTracker)
-            } else {
-                AvatarPickerView()
-                    .environmentObject(userSession)
+                } else if userSession.isSetup {
+                    ContentView()
+                        .environmentObject(userSession)
+                        .environmentObject(taskSheetManager)
+                        .environmentObject(luckyDaySheetManager)
+                        .environmentObject(addTaskSheetManager)
+                        .environmentObject(deleteTaskSheetManager)
+                        .environmentObject(leaveRoomSheetManager)
+                        .environmentObject(taskStore)
+                        .environmentObject(roommateManager)
+                        .environmentObject(taskScheduler)
+                        .environmentObject(streakVM)
+                        .environmentObject(grindVM)
+                        .environmentObject(membersStore)
+                        .environmentObject(animTracker)
+                } else {
+                    AvatarPickerView()
+                        .environmentObject(userSession)
+                }
+            }
+            .task {
+                NotificationManager.shared.requestPermission()
             }
         }
     }
 
-    private func registerFonts() {
+    private static func registerFonts() {
         let fontNames = [
             "Switzer-Semibold", "Switzer-Medium", "Switzer-Bold",
             "Switzer-Regular", "Switzer-Light", "Switzer-Black",

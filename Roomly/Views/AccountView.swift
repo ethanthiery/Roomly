@@ -248,6 +248,7 @@ private struct RoomCard: View {
 struct LeaveRoomSheet: View {
     var onLeave: () -> Void
     var onDismiss: () -> Void
+    @State private var isLeaving = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -308,16 +309,31 @@ struct LeaveRoomSheet: View {
             Spacer().frame(height: 10)
 
             // CTA secondaire — quitter (danger)
-            Button(action: onLeave) {
-                Text("LEAVE THE ROOM")
-                    .font(.switzer(14))
-                    .foregroundColor(Color(hex: "FF2428"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color(hex: "FFEDED"))
-                    .clipShape(Capsule())
+            Button {
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+                isLeaving = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    onLeave()
+                }
+            } label: {
+                ZStack {
+                    Text("LEAVE THE ROOM")
+                        .font(.switzer(14))
+                        .foregroundColor(isLeaving ? Color.clear : Color(hex: "FF2428"))
+                    if isLeaving {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(Color(hex: "FF2428"))
+                            .scaleEffect(0.8)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color(hex: "FFEDED"))
+                .clipShape(Capsule())
             }
             .buttonStyle(RoomlyStaticButtonStyle())
+            .disabled(isLeaving)
 
             Spacer().frame(height: 44)
         }

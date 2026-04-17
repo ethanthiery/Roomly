@@ -26,9 +26,10 @@ struct LuckyDayPurchaseSheet: View {
                 .font(.switzer(28))
                 .foregroundColor(.roomlyBlack)
 
-            Spacer().frame(height: 8)
+            Spacer().frame(height: 24)
 
-            HStack(alignment: .center, spacing: 10) {
+            // Info row
+            HStack(alignment: .top, spacing: 12) {
                 Image("icon_info")
                     .resizable()
                     .renderingMode(.template)
@@ -38,65 +39,22 @@ struct LuckyDayPurchaseSheet: View {
                     .padding(6)
                     .background(Color.white)
                     .clipShape(Circle())
-                    .roomlyShadow()
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 2)
+
                 Text("Trade cloths for a full day without tasks.")
                     .font(.satoshi(16))
                     .foregroundColor(.roomlyBlack)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer().frame(height: 28)
+            Spacer().frame(height: 24)
 
-            // Image décorative
-            Image("mouth2")
+            // Illustration
+            Image("mouth")
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity)
-                .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card, style: .continuous))
-
-            Spacer().frame(height: 28)
-
-            // Balance / Prix
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Your Balance")
-                        .font(.satoshi(12))
-                        .foregroundColor(.roomlyGrey25)
-                    HStack(spacing: 6) {
-                        Text("\(streakVM.clothBalance)")
-                            .font(.switzer(16))
-                            .foregroundColor(canAfford ? .roomlyBlack : Color.red.opacity(0.8))
-                        Image("chiffon")
-                            .resizable().scaledToFit()
-                            .frame(width: 18, height: 18)
-                    }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(canAfford ? Color.roomlyGrey0 : Color.red.opacity(0.08))
-                    .clipShape(Capsule())
-                    if !canAfford {
-                        Text("Not enough cloths")
-                            .font(.satoshi(12))
-                            .foregroundColor(Color.red.opacity(0.7))
-                    }
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 8) {
-                    Text("Price")
-                        .font(.satoshi(12))
-                        .foregroundColor(.roomlyGrey25)
-                    HStack(spacing: 6) {
-                        Text("199")
-                            .font(.switzer(16))
-                            .foregroundColor(.roomlyBlack)
-                        Image("chiffon")
-                            .resizable().scaledToFit()
-                            .frame(width: 18, height: 18)
-                    }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(Color.roomlyGrey0)
-                    .clipShape(Capsule())
-                }
-            }
 
             Spacer().frame(height: 24)
 
@@ -122,7 +80,7 @@ struct LuckyDayPurchaseSheet: View {
                     HStack(spacing: 8) {
                         Text("BUY FOR 199")
                             .font(.switzer(14))
-                            .foregroundColor(canAfford ? .white : .roomlyGrey25)
+                            .foregroundColor(canAfford ? .white : Color(hex: "7A7572"))
                         Image("chiffon")
                             .resizable().scaledToFit()
                             .frame(width: 18, height: 18)
@@ -130,11 +88,27 @@ struct LuckyDayPurchaseSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(canAfford ? Color.roomlyBlack : Color.roomlyGrey0.opacity(0.5))
+                    .background(canAfford ? Color.roomlyBlack : Color(hex: "251819"))
                     .clipShape(Capsule())
                 }
                 .buttonStyle(RoomlyStaticButtonStyle())
                 .disabled(!canAfford)
+
+                Spacer().frame(height: 10)
+
+                // Balance
+                HStack(spacing: 6) {
+                    Text("Your balance :")
+                        .font(.satoshi(14))
+                        .foregroundColor(.roomlyGrey25)
+                    Text("\(streakVM.clothBalance)")
+                        .font(.switzer(14))
+                        .foregroundColor(canAfford ? .roomlyBlack : Color.red.opacity(0.7))
+                    Image("chiffon")
+                        .resizable().scaledToFit()
+                        .frame(width: 16, height: 16)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
 
             Spacer().frame(height: 44)
