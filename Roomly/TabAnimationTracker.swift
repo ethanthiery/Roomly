@@ -14,4 +14,9 @@ class TabAnimationTracker: ObservableObject {
         animated.insert(tab)
         return true
     }
+
+    /// Réinitialise le tracker — les 3 tabs rejoueront leur animation au prochain onAppear.
+    func reset() {
+        animated.removeAll()
+    }
 }

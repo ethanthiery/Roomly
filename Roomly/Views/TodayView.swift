@@ -72,7 +72,9 @@ struct TodayView: View {
                         // 4 — Your Task Today
                         VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
                             SectionTitle("Your Task Today")
-                            if let myTask = taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1") {
+                            if streakVM.luckyDayAvailable {
+                                DayOffCardView(timeLeft: taskScheduler.timeLeftString)
+                            } else if let myTask = taskScheduler.task(for: userSession.currentAvatarId ?? "avatar1") {
                                 TaskCardView(
                                     ownerAvatar: nil,
                                     ownerLabel: "FINISH IT & GET \(myTask.clothReward)",

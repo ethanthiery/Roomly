@@ -63,7 +63,7 @@ final class NotificationManager: NSObject {
 
         if hasActiveStreak {
             // Option A — user has an ongoing streak
-            content.title = "Your streak is on the line 🔥"
+            content.title = "Your streak is on the line 🧺"
             content.body = "Don't break it today. Claim your cloth."
         } else if roommateMaxStreak > 0 {
             // Option C — a roommate is ahead
@@ -88,7 +88,7 @@ final class NotificationManager: NSObject {
     private func schedule1655(taskTitle: String) {
         let content = UNMutableNotificationContent()
         content.title = "Your task is still waiting"
-        content.body = "\(taskTitle) won't do itself. You've got time."
+        content.body = "\(taskTitle) won't do itself. What are you waiting for?"
         content.sound = .default
 
         var comps = DateComponents()
