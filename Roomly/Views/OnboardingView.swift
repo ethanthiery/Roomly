@@ -317,6 +317,32 @@ struct OnboardingView: View {
 
     // MARK: - Avatar (step 8)
 
+    /// Répartit les avatars pris équitablement parmi les avatars disponibles.
+    private func dispersedAvatars(taken: Set<String>) -> [String] {
+        let takenList      = allAvatars.filter {  taken.contains($0) }
+        let availableList  = allAvatars.filter { !taken.contains($0) }
+        guard !takenList.isEmpty else { return availableList }
+
+        let total           = allAvatars.count
+        let n               = takenList.count
+        let takenPositions  = Set((0..<n).map { i in (i + 1) * total / (n + 1) })
+
+        var result     = [String](repeating: "", count: total)
+        var takenIdx   = 0
+        var availIdx   = 0
+
+        for i in 0..<total {
+            if takenIdx < takenList.count && takenPositions.contains(i) {
+                result[i] = takenList[takenIdx]; takenIdx += 1
+            } else if availIdx < availableList.count {
+                result[i] = availableList[availIdx]; availIdx += 1
+            } else {
+                result[i] = takenList[takenIdx]; takenIdx += 1
+            }
+        }
+        return result
+    }
+
     private var avatarScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: 64)
@@ -357,7 +383,7 @@ struct OnboardingView: View {
                 columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5),
                 spacing: 12
             ) {
-                ForEach(allAvatars, id: \.self) { avatar in
+                ForEach(dispersedAvatars(taken: takenAvatars), id: \.self) { avatar in
                     OnboardingAvatarCell(
                         name: avatar,
                         isSelected: selectedAvatar == avatar,
