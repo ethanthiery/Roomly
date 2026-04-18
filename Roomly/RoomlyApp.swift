@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreText
 import FirebaseCore
+import SuperwallKit
 
 @main
 struct RoomlyApp: App {
@@ -37,6 +38,9 @@ struct RoomlyApp: App {
                         pendingOnboardingStep = 0
                         animTracker.reset()
                         onboardingCompleted = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            Superwall.shared.register(placement: "get_pro")
+                        }
                     }
                     .environmentObject(userSession)
                     .environmentObject(roommateManager)
