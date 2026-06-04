@@ -43,12 +43,15 @@ class UserSession: ObservableObject {
         self.roomCode        = UserDefaults.standard.string(forKey: "roomCode") ?? ""
     }
 
+    // Stockage temporaire du code généré pendant l'onboarding (avant confirmation)
+    @Published var pendingRoomCode: String = ""
+
     // MARK: - Setters
 
     func setup(avatarId: String)    { currentAvatarId = avatarId }
     func setUsername(_ name: String) { username = name }
     func setRoomName(_ name: String) { roomName = name }
-    func setRoomCode(_ code: String) { roomCode = code }
+    func setRoomCode(_ code: String) { roomCode = code; pendingRoomCode = "" }
 
     // MARK: - Leave
 

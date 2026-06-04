@@ -482,8 +482,10 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             Spacer()
 
-            // Code display
-            let displayCode = userSession.roomCode.isEmpty ? generatedCode : userSession.roomCode
+            // Code display — priorité : roomCode définitif > pendingRoomCode > generatedCode
+            let displayCode = !userSession.roomCode.isEmpty ? userSession.roomCode
+                            : !userSession.pendingRoomCode.isEmpty ? userSession.pendingRoomCode
+                            : generatedCode
             VStack(spacing: 16) {
                 Text(displayCode)
                     .font(.switzer(48))
@@ -556,6 +558,7 @@ struct OnboardingView: View {
         isLoadingCreate = true
         let code = FirebaseManager.shared.generateRoomCode()
         generatedCode = code
+        userSession.pendingRoomCode = code  // stocké dans StateObject pour garantir la persistance
         FirebaseManager.shared.createRoom(
             code: code,
             name: userSession.roomName,
@@ -566,9 +569,6 @@ struct OnboardingView: View {
             DispatchQueue.main.async {
                 isLoadingCreate = false
                 if success {
-                    // Ne pas appeler setRoomCode ici — ça rendrait isSetup=true
-                    // et ferait switcher vers ContentView avant d'afficher le code.
-                    // On le fait dans beginCompletion() à la place.
                     roommateManager.activeAvatarIds = [avatarId]
                     step = 11  // → show code screen
                 } else {
@@ -612,12 +612,11 @@ struct OnboardingView: View {
         isCompleting = true
         withAnimation(.easeIn(duration: 0.3)) { completingOpacity = 1.0 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            // Définit le roomCode juste avant de compléter,
-            // une fois l'animation lancée (évite le switch prématuré vers ContentView).
-            if !generatedCode.isEmpty {
-                userSession.setRoomCode(generatedCode)
-            } else if !joinCode.isEmpty {
-                userSession.setRoomCode(joinCode)
+            let codeToSave = !userSession.pendingRoomCode.isEmpty ? userSession.pendingRoomCode
+                           : !generatedCode.isEmpty ? generatedCode
+                           : joinCode
+            if !codeToSave.isEmpty {
+                userSession.setRoomCode(codeToSave)
             }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             onComplete()
