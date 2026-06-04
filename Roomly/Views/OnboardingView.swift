@@ -487,14 +487,22 @@ struct OnboardingView: View {
 
             // Code display — generatedCode est @AppStorage donc toujours disponible
             VStack(spacing: 16) {
-                Text(generatedCode)
-                    .font(.switzer(48))
-                    .foregroundColor(.roomlyBlack)
-                    .tracking(8)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 32)
-                    .background(Color.roomlyGrey0)
-                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.roomlyGrey0)
+                    if generatedCode.isEmpty {
+                        Text("⚠️ \(UserDefaults.standard.string(forKey: "_onb_code") ?? "nil")")
+                            .font(.system(size: 18))
+                            .foregroundColor(.red)
+                    } else {
+                        Text(generatedCode)
+                            .font(.switzer(48))
+                            .foregroundColor(.roomlyBlack)
+                            .tracking(8)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
 
                 // Share button
                 ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
