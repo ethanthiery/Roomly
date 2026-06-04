@@ -566,7 +566,9 @@ struct OnboardingView: View {
             DispatchQueue.main.async {
                 isLoadingCreate = false
                 if success {
-                    userSession.setRoomCode(code)
+                    // Ne pas appeler setRoomCode ici — ça rendrait isSetup=true
+                    // et ferait switcher vers ContentView avant d'afficher le code.
+                    // On le fait dans beginCompletion() à la place.
                     roommateManager.activeAvatarIds = [avatarId]
                     step = 11  // → show code screen
                 } else {
@@ -589,11 +591,10 @@ struct OnboardingView: View {
             DispatchQueue.main.async {
                 isLoadingCreate = false
                 if success {
-                    userSession.setRoomCode(joinCode)
+                    // setRoomCode appelé dans beginCompletion()
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     beginCompletion()
                 } else {
-                    // Afficher une erreur ou retry
                     isLoadingCreate = false
                 }
             }
@@ -611,6 +612,13 @@ struct OnboardingView: View {
         isCompleting = true
         withAnimation(.easeIn(duration: 0.3)) { completingOpacity = 1.0 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            // Définit le roomCode juste avant de compléter,
+            // une fois l'animation lancée (évite le switch prématuré vers ContentView).
+            if !generatedCode.isEmpty {
+                userSession.setRoomCode(generatedCode)
+            } else if !joinCode.isEmpty {
+                userSession.setRoomCode(joinCode)
+            }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             onComplete()
         }
