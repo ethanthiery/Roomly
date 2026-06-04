@@ -277,7 +277,8 @@ struct OnboardingView: View {
             let trimmed = roomNameInput.trimmingCharacters(in: .whitespaces)
             ctaButton(label: "NEXT", enabled: !trimmed.isEmpty) {
                 userSession.setRoomName(trimmed)
-                advance()
+                UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                step = 7  // → username (pas advance() qui ferait step 11 directement)
             }
             .padding(.horizontal, 24).padding(.bottom, 44)
         }
@@ -485,24 +486,16 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             Spacer()
 
-            // Code display — generatedCode est @AppStorage donc toujours disponible
+            // Code display
             VStack(spacing: 16) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.roomlyGrey0)
-                    if generatedCode.isEmpty {
-                        Text("⚠️ \(UserDefaults.standard.string(forKey: "_onb_code") ?? "nil")")
-                            .font(.system(size: 18))
-                            .foregroundColor(.red)
-                    } else {
-                        Text(generatedCode)
-                            .font(.switzer(48))
-                            .foregroundColor(.roomlyBlack)
-                            .tracking(8)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 120)
+                Text(generatedCode)
+                    .font(.switzer(48))
+                    .foregroundColor(.roomlyBlack)
+                    .tracking(8)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 32)
+                    .background(Color.roomlyGrey0)
+                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
 
                 // Share button
                 ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
