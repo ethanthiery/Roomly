@@ -23,6 +23,7 @@ struct ContentView: View {
     @AppStorage("pendingOnboardingStep") private var pendingOnboardingStep = 0
     @EnvironmentObject var streakVM: StreakViewModel
     @EnvironmentObject var membersStore: MembersStore
+    @EnvironmentObject var roommateManager: RoommateManager
 
     var body: some View {
         ZStack(alignment: .bottom) {
