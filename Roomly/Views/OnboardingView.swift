@@ -25,7 +25,8 @@ struct OnboardingView: View {
     // Room creation
     @State private var isCreatingRoom  = false   // true = CREATE flow, false = JOIN flow
     @State private var roomNameInput   = ""       // nom saisi pour créer la room
-    @State private var generatedCode   = ""       // code généré après création
+    // @AppStorage garantit la persistance même si SwiftUI recrée la vue
+    @AppStorage("_onb_code") private var generatedCode = ""
 
     // Room join
     @State private var joinCode        = ""       // code saisi pour rejoindre
@@ -222,11 +223,13 @@ struct OnboardingView: View {
             VStack(spacing: 10) {
                 ctaButton(label: "JOIN A ROOM", enabled: true) {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    generatedCode = ""
                     isCreatingRoom = false
                     step = 9
                 }
                 ctaButton(label: "CREATE A ROOM", enabled: true) {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    generatedCode = ""
                     isCreatingRoom = true
                     step = 10
                 }
@@ -482,12 +485,9 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             Spacer()
 
-            // Code display — priorité : roomCode définitif > pendingRoomCode > generatedCode
-            let displayCode = !userSession.roomCode.isEmpty ? userSession.roomCode
-                            : !userSession.pendingRoomCode.isEmpty ? userSession.pendingRoomCode
-                            : generatedCode
+            // Code display — generatedCode est @AppStorage donc toujours disponible
             VStack(spacing: 16) {
-                Text(displayCode)
+                Text(generatedCode)
                     .font(.switzer(48))
                     .foregroundColor(.roomlyBlack)
                     .tracking(8)
@@ -497,7 +497,7 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
 
                 // Share button
-                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(displayCode)") {
+                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
                     HStack(spacing: 8) {
                         Image(systemName: "square.and.arrow.up")
                         Text("SHARE CODE")
@@ -554,26 +554,38 @@ struct OnboardingView: View {
     }
 
     /// Crée la room sur Firebase après que l'utilisateur a choisi son avatar.
+    /// Vérifie d'abord l'unicité du code généré.
     private func performCreate(avatarId: String) {
         isLoadingCreate = true
-        let code = FirebaseManager.shared.generateRoomCode()
-        generatedCode = code
-        userSession.pendingRoomCode = code  // stocké dans StateObject pour garantir la persistance
-        FirebaseManager.shared.createRoom(
-            code: code,
-            name: userSession.roomName,
-            userId: userSession.userId,
-            avatarId: avatarId,
-            userName: userSession.username
-        ) { success in
+        let candidate = FirebaseManager.shared.generateRoomCode()
+
+        // Vérifie que ce code n'existe pas déjà
+        FirebaseManager.shared.roomExists(code: candidate) { existingName in
             DispatchQueue.main.async {
-                isLoadingCreate = false
-                if success {
-                    roommateManager.activeAvatarIds = [avatarId]
-                    step = 11  // → show code screen
-                } else {
-                    // Retry silencieux — rare
-                    performCreate(avatarId: avatarId)
+                if existingName != nil {
+                    // Collision (rare) — on réessaie avec un nouveau code
+                    self.performCreate(avatarId: avatarId)
+                    return
+                }
+                // Code disponible : on le sauvegarde et on crée la room
+                self.generatedCode = candidate            // @AppStorage → UserDefaults immédiatement
+                self.userSession.pendingRoomCode = candidate
+                FirebaseManager.shared.createRoom(
+                    code: candidate,
+                    name: self.userSession.roomName,
+                    userId: self.userSession.userId,
+                    avatarId: avatarId,
+                    userName: self.userSession.username
+                ) { success in
+                    DispatchQueue.main.async {
+                        self.isLoadingCreate = false
+                        if success {
+                            self.roommateManager.activeAvatarIds = [avatarId]
+                            self.step = 11  // → show code screen
+                        } else {
+                            self.performCreate(avatarId: avatarId)
+                        }
+                    }
                 }
             }
         }
@@ -612,12 +624,11 @@ struct OnboardingView: View {
         isCompleting = true
         withAnimation(.easeIn(duration: 0.3)) { completingOpacity = 1.0 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-            let codeToSave = !userSession.pendingRoomCode.isEmpty ? userSession.pendingRoomCode
-                           : !generatedCode.isEmpty ? generatedCode
-                           : joinCode
+            let codeToSave = !generatedCode.isEmpty ? generatedCode : joinCode
             if !codeToSave.isEmpty {
-                userSession.setRoomCode(codeToSave)
+                userSession.setRoomCode(codeToSave)  // efface aussi pendingRoomCode
             }
+            generatedCode = ""  // nettoyage @AppStorage
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             onComplete()
         }
