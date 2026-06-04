@@ -33,18 +33,7 @@ struct RoomlyApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if !onboardingCompleted {
-                    OnboardingView(initialStep: pendingOnboardingStep) {
-                        pendingOnboardingStep = 0
-                        animTracker.reset()
-                        onboardingCompleted = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                            Superwall.shared.register(placement: "get_pro")
-                        }
-                    }
-                    .environmentObject(userSession)
-                    .environmentObject(roommateManager)
-                } else if userSession.isSetup {
+                if userSession.isSetup {
                     ContentView()
                         .environmentObject(userSession)
                         .environmentObject(taskSheetManager)
@@ -61,15 +50,18 @@ struct RoomlyApp: App {
                         .environmentObject(membersStore)
                         .environmentObject(animTracker)
                 } else {
-                    AvatarPickerView()
-                        .environmentObject(userSession)
-                }
-            }
-            .onAppear {
-                // Migration : si l'onboarding est marqué "done" mais qu'il n'y a pas de roomCode
-                // (anciens utilisateurs avant le système multi-rooms), on relance l'onboarding.
-                if onboardingCompleted && userSession.roomCode.isEmpty {
-                    onboardingCompleted = false
+                    // Anciens utilisateurs sans roomCode → reprendre à l'étape du choix de groupe (6)
+                    let startStep = (onboardingCompleted && userSession.roomCode.isEmpty) ? 6 : pendingOnboardingStep
+                    OnboardingView(initialStep: startStep) {
+                        pendingOnboardingStep = 0
+                        animTracker.reset()
+                        onboardingCompleted = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            Superwall.shared.register(placement: "get_pro")
+                        }
+                    }
+                    .environmentObject(userSession)
+                    .environmentObject(roommateManager)
                 }
             }
             .task {
