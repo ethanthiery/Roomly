@@ -65,6 +65,13 @@ struct RoomlyApp: App {
                         .environmentObject(userSession)
                 }
             }
+            .onAppear {
+                // Migration : si l'onboarding est marqué "done" mais qu'il n'y a pas de roomCode
+                // (anciens utilisateurs avant le système multi-rooms), on relance l'onboarding.
+                if onboardingCompleted && userSession.roomCode.isEmpty {
+                    onboardingCompleted = false
+                }
+            }
             .task {
                 NotificationManager.shared.requestPermission()
             }

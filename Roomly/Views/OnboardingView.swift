@@ -22,20 +22,28 @@ struct OnboardingView: View {
     // Avatar
     @State private var selectedAvatar: String? = nil
 
-    // Join room
-    @State private var joinLink      = ""
-    @State private var isLoadingJoin = false
+    // Room creation
+    @State private var isCreatingRoom  = false   // true = CREATE flow, false = JOIN flow
+    @State private var roomNameInput   = ""       // nom saisi pour créer la room
+    @State private var generatedCode   = ""       // code généré après création
 
-    // Transition finale
-    @State private var isCompleting     = false
+    // Room join
+    @State private var joinCode        = ""       // code saisi pour rejoindre
+    @State private var joinRoomName    = ""       // nom de la room trouvée
+    @State private var joinCodeError   = ""       // message d'erreur code invalide
+    @State private var isLoadingJoin   = false
+    @State private var existingMemberAvatarIds: Set<String> = []  // avatars déjà pris
+
+    // Completion
+    @State private var isCompleting      = false
     @State private var completingOpacity = 0.0
+    @State private var isLoadingCreate   = false
 
     private let allAvatars = [
         "avatar1","avatar2","avatar3","avatar4","avatar5",
         "avatar6","avatar7","avatar8","avatar9","avatar10"
     ]
 
-    // Index à partir duquel les explications deviennent skippables vers le step username
     private let skipDestination = 6
 
     var body: some View {
@@ -46,14 +54,12 @@ struct OnboardingView: View {
                 .transition(.opacity)
                 .animation(.easeInOut(duration: 0.2), value: step)
 
-            // Boutons fixes en haut — en dehors du contenu pour éviter toute animation
+            // Boutons fixes en haut
             VStack {
                 HStack {
-                    // Bouton retour — visible seulement si on peut revenir en arrière dans l'onboarding
                     if step > initialStep {
                         Button {
-                            // joinScreen (9) est atteint depuis groupScreen (6), pas depuis avatarScreen (8)
-                            step = (step == 9) ? 6 : step - 1
+                            handleBack()
                         } label: {
                             Image("icon_back")
                                 .resizable()
@@ -69,7 +75,6 @@ struct OnboardingView: View {
                         .buttonStyle(RoomlyStaticButtonStyle())
                     }
                     Spacer()
-                    // Skip (steps 1–5 uniquement)
                     if step >= 1 && step <= 5 {
                         Button {
                             UIImpactFeedbackGenerator(style: .soft).impactOccurred()
@@ -91,15 +96,24 @@ struct OnboardingView: View {
             if isCompleting {
                 ZStack {
                     Color.white.ignoresSafeArea()
-                    VStack(spacing: 20) {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .scaleEffect(1.2)
-                            .tint(.roomlyBlack)
-                    }
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(1.2)
+                        .tint(.roomlyBlack)
                 }
                 .opacity(completingOpacity)
             }
+        }
+    }
+
+    // MARK: - Back Navigation
+
+    private func handleBack() {
+        switch step {
+        case 9:  step = 6   // join screen → choice
+        case 10: step = 6   // room name → choice
+        case 7:  step = isCreatingRoom ? 10 : 9   // username → room name or join code
+        default: step -= 1
         }
     }
 
@@ -108,46 +122,28 @@ struct OnboardingView: View {
     @ViewBuilder
     private var screenContent: some View {
         switch step {
-        case 0:
-            welcomeScreen
-        case 1:
-            explainScreen(
-                title: "Know Exactly\nWhat You Have To Do.",
-                subtitle: "Browse all available tasks and add new ones to the daily rotation anytime.",
-                imageName: "onb_1_2"
-            )
-        case 2:
-            explainScreen(
-                title: "Assigned Fresh Every Morning.",
-                subtitle: "Each day, the app deals one task per roommate. Automatic and fair.",
-                imageName: "onb_2"
-            )
-        case 3:
-            explainScreen(
-                title: "You've Got Until Midnight.",
-                subtitle: "Complete your task before the day ends or lose your daily cloth reward.",
-                imageName: "onb_3"
-            )
-        case 4:
-            explainScreen(
-                title: "Earn Cloth\nFor Every Task.",
-                subtitle: "Stack cloths throughout the week and spend them on perks like a Day-Off.",
-                imageName: "onb_4"
-            )
-        case 5:
-            explainScreen(
-                title: "Compete Every Month.",
-                subtitle: "The leaderboard tracks who pulls their weight. It resets monthly, no mercy.",
-                imageName: "onb_5"
-            )
-        case 6:
-            groupScreen
-        case 7:
-            usernameScreen
-        case 8:
-            avatarScreen
-        default:
-            joinScreen
+        case 0:  welcomeScreen
+        case 1:  explainScreen(title: "Know Exactly\nWhat You Have To Do.",
+                               subtitle: "Browse all available tasks and add new ones to the daily rotation anytime.",
+                               imageName: "onb_1_2")
+        case 2:  explainScreen(title: "Assigned Fresh Every Morning.",
+                               subtitle: "Each day, the app deals one task per roommate. Automatic and fair.",
+                               imageName: "onb_2")
+        case 3:  explainScreen(title: "You've Got Until Midnight.",
+                               subtitle: "Complete your task before the day ends or lose your daily cloth reward.",
+                               imageName: "onb_3")
+        case 4:  explainScreen(title: "Earn Cloth\nFor Every Task.",
+                               subtitle: "Stack cloths throughout the week and spend them on perks like a Day-Off.",
+                               imageName: "onb_4")
+        case 5:  explainScreen(title: "Compete Every Month.",
+                               subtitle: "The leaderboard tracks who pulls their weight. It resets monthly, no mercy.",
+                               imageName: "onb_5")
+        case 6:  groupScreen
+        case 7:  usernameScreen
+        case 8:  avatarScreen
+        case 9:  joinScreen
+        case 10: roomNameScreen
+        default: roomCodeScreen
         }
     }
 
@@ -156,23 +152,17 @@ struct OnboardingView: View {
     private var welcomeScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: 64)
-
             Text("Stop Arguing About Chores.")
                 .font(.switzer(40))
                 .foregroundColor(.roomlyBlack)
                 .tracking(-0.5)
                 .padding(.horizontal, 24)
-
             Spacer()
-
             Image("onb_1")
-                .resizable()
-                .scaledToFit()
+                .resizable().scaledToFit()
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
-
             Spacer()
-
             ctaButton(label: "CONTINUE", enabled: true) { advance() }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 44)
@@ -184,50 +174,25 @@ struct OnboardingView: View {
 
     private func explainScreen(title: String, subtitle: String, imageName: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-
             Spacer().frame(height: 80)
-
             Text(title)
-                .font(.switzer(40))
-                .foregroundColor(.roomlyBlack)
-                .tracking(-0.5)
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 24)
-
             Spacer().frame(height: 20)
-
             HStack(alignment: .top, spacing: 10) {
-                Image("icon_info")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(.roomlyBlack)
-                    .padding(6)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .roomlyShadow()
-                    .offset(y: -3)
-                Text(subtitle)
-                    .font(.satoshi(16))
-                    .foregroundColor(.roomlyBlack)
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow().offset(y: -3)
+                Text(subtitle).font(.satoshi(16)).foregroundColor(.roomlyBlack)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 24)
-
             Spacer()
-
             if let imageName {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 24)
-
+                Image(imageName).resizable().scaledToFit().frame(maxWidth: .infinity).padding(.horizontal, 24)
                 Spacer()
             }
-
-            // Indicateur de progression (steps 1–5)
             HStack(spacing: 6) {
                 ForEach(1...5, id: \.self) { i in
                     Circle()
@@ -236,13 +201,82 @@ struct OnboardingView: View {
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: step)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.bottom, 12)
-            .padding(.horizontal, 24)
-
+            .frame(maxWidth: .infinity, alignment: .center).padding(.bottom, 12).padding(.horizontal, 24)
             ctaButton(label: "NEXT", enabled: true) { advance() }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 44)
+                .padding(.horizontal, 24).padding(.bottom, 44)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Group choice (step 6)
+
+    private var groupScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 64)
+            Text("Join Or\nCreate A Room.")
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24)
+            Spacer()
+            Image("onb_6").resizable().scaledToFit().frame(maxWidth: .infinity).padding(.horizontal, 24)
+            Spacer()
+            VStack(spacing: 10) {
+                ctaButton(label: "JOIN A ROOM", enabled: true) {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    isCreatingRoom = false
+                    step = 9
+                }
+                ctaButton(label: "CREATE A ROOM", enabled: true) {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    isCreatingRoom = true
+                    step = 10
+                }
+            }
+            .padding(.horizontal, 24).padding(.bottom, 44)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Room Name (step 10 — CREATE flow)
+
+    @FocusState private var roomNameFocused: Bool
+
+    private var roomNameScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 64)
+            Text("Name Your Place.")
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5).padding(.horizontal, 24)
+            Spacer().frame(height: 20)
+            HStack(alignment: .center, spacing: 10) {
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow()
+                Text("Give your flat a name. Your roommates will see it when they join.")
+                    .font(.satoshi(16)).foregroundColor(.roomlyBlack)
+            }
+            .padding(.horizontal, 24)
+            Spacer().frame(height: 40)
+            VStack(alignment: .trailing, spacing: 6) {
+                TextField("The Coolok's, Flat 4B…", text: $roomNameInput)
+                    .font(.switzer(18)).foregroundColor(.roomlyBlack)
+                    .padding(.horizontal, 16).padding(.vertical, 14)
+                    .background(Color.roomlyGrey0)
+                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+                    .focused($roomNameFocused)
+                    .onAppear { roomNameFocused = true }
+                    .onChange(of: roomNameInput) { _, new in
+                        if new.count > 20 { roomNameInput = String(new.prefix(20)) }
+                    }
+                Text("\(roomNameInput.count)/20")
+                    .font(.satoshi(12)).foregroundColor(.roomlyGrey25)
+            }
+            .padding(.horizontal, 24)
+            Spacer()
+            let trimmed = roomNameInput.trimmingCharacters(in: .whitespaces)
+            ctaButton(label: "NEXT", enabled: !trimmed.isEmpty) {
+                userSession.setRoomName(trimmed)
+                advance()
+            }
+            .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -254,40 +288,22 @@ struct OnboardingView: View {
     private var usernameScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: 64)
-
             Text("What's Your Name?")
-                .font(.switzer(40))
-                .foregroundColor(.roomlyBlack)
-                .tracking(-0.5)
-                .padding(.horizontal, 24)
-
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5).padding(.horizontal, 24)
             Spacer().frame(height: 20)
-
             HStack(alignment: .center, spacing: 10) {
-                Image("icon_info")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(.roomlyBlack)
-                    .padding(6)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .roomlyShadow()
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow()
                 Text("This is how your roommates will know you.")
-                    .font(.satoshi(16))
-                    .foregroundColor(.roomlyBlack)
+                    .font(.satoshi(16)).foregroundColor(.roomlyBlack)
             }
             .padding(.horizontal, 24)
-
             Spacer().frame(height: 40)
-
             VStack(alignment: .trailing, spacing: 6) {
                 TextField("Your first name...", text: $username)
-                    .font(.switzer(18))
-                    .foregroundColor(.roomlyBlack)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
+                    .font(.switzer(18)).foregroundColor(.roomlyBlack)
+                    .padding(.horizontal, 16).padding(.vertical, 14)
                     .background(Color.roomlyGrey0)
                     .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
                     .focused($usernameFieldFocused)
@@ -295,22 +311,16 @@ struct OnboardingView: View {
                     .onChange(of: username) { _, new in
                         if new.count > 15 { username = String(new.prefix(15)) }
                     }
-
-                Text("\(username.count)/15")
-                    .font(.satoshi(12))
-                    .foregroundColor(.roomlyGrey25)
+                Text("\(username.count)/15").font(.satoshi(12)).foregroundColor(.roomlyGrey25)
             }
             .padding(.horizontal, 24)
-
             Spacer()
-
             let trimmed = username.trimmingCharacters(in: .whitespaces)
             ctaButton(label: "NEXT", enabled: !trimmed.isEmpty) {
                 userSession.setUsername(trimmed)
                 advance()
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 44)
+            .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -319,18 +329,14 @@ struct OnboardingView: View {
 
     /// Répartit les avatars pris équitablement parmi les avatars disponibles.
     private func dispersedAvatars(taken: Set<String>) -> [String] {
-        let takenList      = allAvatars.filter {  taken.contains($0) }
-        let availableList  = allAvatars.filter { !taken.contains($0) }
+        let takenList     = allAvatars.filter {  taken.contains($0) }
+        let availableList = allAvatars.filter { !taken.contains($0) }
         guard !takenList.isEmpty else { return availableList }
-
-        let total           = allAvatars.count
-        let n               = takenList.count
-        let takenPositions  = Set((0..<n).map { i in (i + 1) * total / (n + 1) })
-
-        var result     = [String](repeating: "", count: total)
-        var takenIdx   = 0
-        var availIdx   = 0
-
+        let total          = allAvatars.count
+        let n              = takenList.count
+        let takenPositions = Set((0..<n).map { i in (i + 1) * total / (n + 1) })
+        var result = [String](repeating: "", count: total)
+        var takenIdx = 0; var availIdx = 0
         for i in 0..<total {
             if takenIdx < takenList.count && takenPositions.contains(i) {
                 result[i] = takenList[takenIdx]; takenIdx += 1
@@ -346,181 +352,159 @@ struct OnboardingView: View {
     private var avatarScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: 64)
-
             Text("Pick Your Avatar.")
-                .font(.switzer(40))
-                .foregroundColor(.roomlyBlack)
-                .tracking(-0.5)
-                .padding(.horizontal, 24)
-
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5).padding(.horizontal, 24)
             Spacer().frame(height: 20)
-
             HStack(alignment: .top, spacing: 10) {
-                Image("icon_info")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(.roomlyBlack)
-                    .padding(6)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .roomlyShadow()
-                    .offset(y: -3)
-                let takenCount = roommateManager.activeAvatarIds.dropFirst().filter { allAvatars.contains($0) }.count
-                Text("This is how you'll appear to your roommates." + (takenCount > 0 ? " Faded avatars are already taken by your roommates." : ""))
-                    .font(.satoshi(16))
-                    .foregroundColor(.roomlyBlack)
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow().offset(y: -3)
+                Text("This is how you'll appear to your roommates."
+                     + (existingMemberAvatarIds.isEmpty ? "" : " Faded avatars are already taken."))
+                    .font(.satoshi(16)).foregroundColor(.roomlyBlack)
             }
             .padding(.horizontal, 24)
-
             Spacer().frame(height: 32)
-
-            // Grille 2 × 5
-            let takenAvatars = Set(roommateManager.activeAvatarIds.dropFirst())
-
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5),
-                spacing: 12
-            ) {
-                ForEach(dispersedAvatars(taken: takenAvatars), id: \.self) { avatar in
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+                ForEach(dispersedAvatars(taken: existingMemberAvatarIds), id: \.self) { avatar in
                     OnboardingAvatarCell(
                         name: avatar,
                         isSelected: selectedAvatar == avatar,
-                        isTaken: takenAvatars.contains(avatar)
+                        isTaken: existingMemberAvatarIds.contains(avatar)
                     ) {
                         selectedAvatar = selectedAvatar == avatar ? nil : avatar
                     }
                 }
             }
             .padding(.horizontal, 24)
-
             Spacer()
-
-            ctaButton(label: "LET'S GO", enabled: selectedAvatar != nil) {
+            ctaButton(
+                label: isLoadingCreate ? "CREATING..." : (isCreatingRoom ? "LET'S GO" : "JOIN THE ROOM"),
+                enabled: selectedAvatar != nil && !isLoadingCreate
+            ) {
+                guard let avatar = selectedAvatar else { return }
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                if let avatar = selectedAvatar {
-                    userSession.setup(avatarId: avatar)
-                    roommateManager.updateUserAvatar(avatar)
-                }
-                beginCompletion()
+                userSession.setup(avatarId: avatar)
+                roommateManager.updateUserAvatar(avatar)
+                if isCreatingRoom { performCreate(avatarId: avatar) }
+                else              { performJoin(avatarId: avatar)   }
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 44)
+            .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
-    // MARK: - Group choice (step 6)
+    // MARK: - Join Screen (step 9)
 
-    @FocusState private var joinLinkFocused: Bool
-
-    private var groupScreen: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer().frame(height: 64)
-
-            Text("Join Or\nCreate A Room.")
-                .font(.switzer(40))
-                .foregroundColor(.roomlyBlack)
-                .tracking(-0.5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-
-            Spacer()
-
-            Image("onb_6")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 24)
-
-            Spacer()
-
-            VStack(spacing: 10) {
-                // JOIN A ROOM — principal
-                ctaButton(label: "JOIN A ROOM", enabled: true) {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    step = 9
-                }
-
-                // CREATE A ROOM — coming soon (style gris)
-                Button {} label: {
-                    Text("CREATE A ROOM")
-                        .font(.switzer(14))
-                        .foregroundColor(.roomlyGrey25)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.roomlyGrey0)
-                        .clipShape(Capsule())
-                }
-                .disabled(true)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 44)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Join a room (step 9 — détour depuis groupScreen)
+    @FocusState private var joinCodeFocused: Bool
 
     private var joinScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer().frame(height: 64)
-
             Text("Join a Room.")
-                .font(.switzer(40))
-                .foregroundColor(.roomlyBlack)
-                .tracking(-0.5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24)
             Spacer().frame(height: 20)
-
             HStack(alignment: .center, spacing: 10) {
-                Image("icon_info")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .foregroundColor(.roomlyBlack)
-                    .padding(6)
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .roomlyShadow()
-                Text("Paste the invite link sent by your roommate.")
-                    .font(.satoshi(16))
-                    .foregroundColor(.roomlyBlack)
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow()
+                Text("Enter the 6-character code your roommate shared with you.")
+                    .font(.satoshi(16)).foregroundColor(.roomlyBlack)
             }
             .padding(.horizontal, 24)
-
             Spacer().frame(height: 32)
 
-            TextField("roomly://join?room=...", text: $joinLink)
-                .font(.satoshi(14))
+            // Code input
+            TextField("e.g. FLAT4X", text: $joinCode)
+                .font(.switzer(24))
                 .foregroundColor(.roomlyBlack)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(Color.roomlyGrey0)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .multilineTextAlignment(.center)
+                .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .focused($joinLinkFocused)
-                .onAppear { joinLinkFocused = true }
+                .tracking(4)
+                .padding(.horizontal, 16).padding(.vertical, 18)
+                .background(Color.roomlyGrey0)
+                .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+                .focused($joinCodeFocused)
+                .onAppear { joinCodeFocused = true }
+                .onChange(of: joinCode) { _, new in
+                    let clean = String(new.uppercased().filter { $0.isLetter || $0.isNumber }.prefix(6))
+                    if clean != new { joinCode = clean }
+                    joinCodeError = ""
+                    joinRoomName  = ""
+                }
                 .padding(.horizontal, 24)
 
-            Spacer().frame(height: 12)
+            // Feedback : nom de la room ou erreur
+            if !joinRoomName.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill").foregroundColor(.green).font(.system(size: 14))
+                    Text("Room found: \"\(joinRoomName)\"").font(.satoshi(14)).foregroundColor(.green)
+                }
+                .padding(.horizontal, 24).padding(.top, 8)
+            } else if !joinCodeError.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill").foregroundColor(.red).font(.system(size: 14))
+                    Text(joinCodeError).font(.satoshi(14)).foregroundColor(.red)
+                }
+                .padding(.horizontal, 24).padding(.top, 8)
+            }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Test link (group with Lea, James & Laura) :")
-                    .font(.satoshi(12))
-                    .foregroundColor(.roomlyGrey25)
-                Button {
-                    joinLink = "roomly://join?flat=roomly-default-flat"
-                } label: {
-                    Text("roomly://join?flat=roomly-default-flat")
-                        .font(.satoshi(12))
-                        .foregroundColor(.roomlyBlack)
-                        .underline()
+            Spacer()
+
+            ctaButton(
+                label: isLoadingJoin ? "CHECKING..." : "FIND THE ROOM",
+                enabled: joinCode.count == 6 && !isLoadingJoin
+            ) {
+                performFindRoom()
+            }
+            .padding(.horizontal, 24).padding(.bottom, 44)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Room Code Screen (step 11 — CREATE flow)
+
+    private var roomCodeScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: 64)
+            Text("Your Room Is Ready.")
+                .font(.switzer(40)).foregroundColor(.roomlyBlack).tracking(-0.5).padding(.horizontal, 24)
+            Spacer().frame(height: 20)
+            HStack(alignment: .center, spacing: 10) {
+                Image("icon_info").resizable().renderingMode(.template).scaledToFit()
+                    .frame(width: 16, height: 16).foregroundColor(.roomlyBlack)
+                    .padding(6).background(Color.white).clipShape(Circle()).roomlyShadow()
+                Text("Share this code with your roommates so they can join.")
+                    .font(.satoshi(16)).foregroundColor(.roomlyBlack)
+            }
+            .padding(.horizontal, 24)
+            Spacer()
+
+            // Code display
+            VStack(spacing: 16) {
+                Text(generatedCode)
+                    .font(.switzer(48))
+                    .foregroundColor(.roomlyBlack)
+                    .tracking(8)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 32)
+                    .background(Color.roomlyGrey0)
+                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+
+                // Share button
+                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("SHARE CODE")
+                    }
+                    .font(.switzer(14))
+                    .foregroundColor(.roomlyBlack)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.roomlyGrey0)
+                    .clipShape(Capsule())
                 }
                 .buttonStyle(RoomlyStaticButtonStyle())
             }
@@ -528,16 +512,91 @@ struct OnboardingView: View {
 
             Spacer()
 
-            ctaButton(
-                label: isLoadingJoin ? "JOINING..." : "JOIN THE ROOM",
-                enabled: joinLink.trimmingCharacters(in: .whitespaces) == "roomly://join?flat=roomly-default-flat" && !isLoadingJoin
-            ) {
-                performJoin()
+            ctaButton(label: "ENTER THE APP", enabled: true) {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                beginCompletion()
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 44)
+            .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Actions
+
+    /// Vérifie que le code existe sur Firebase, affiche le nom de la room si trouvé.
+    private func performFindRoom() {
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        isLoadingJoin = true
+        joinCodeError = ""
+        FirebaseManager.shared.roomExists(code: joinCode) { roomName in
+            DispatchQueue.main.async {
+                isLoadingJoin = false
+                if let name = roomName {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    joinRoomName = name
+                    userSession.setRoomName(name)
+                    // Charge les avatars déjà pris pour le picker
+                    FirebaseManager.shared.getRoomMembers(code: joinCode) { members in
+                        DispatchQueue.main.async {
+                            existingMemberAvatarIds = Set(members.map(\.avatarId))
+                            step = 7  // → username
+                        }
+                    }
+                } else {
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    joinCodeError = "Room not found. Check the code and try again."
+                }
+            }
+        }
+    }
+
+    /// Crée la room sur Firebase après que l'utilisateur a choisi son avatar.
+    private func performCreate(avatarId: String) {
+        isLoadingCreate = true
+        let code = FirebaseManager.shared.generateRoomCode()
+        generatedCode = code
+        FirebaseManager.shared.createRoom(
+            code: code,
+            name: userSession.roomName,
+            userId: userSession.userId,
+            avatarId: avatarId,
+            userName: userSession.username
+        ) { success in
+            DispatchQueue.main.async {
+                isLoadingCreate = false
+                if success {
+                    userSession.setRoomCode(code)
+                    roommateManager.activeAvatarIds = [avatarId]
+                    step = 11  // → show code screen
+                } else {
+                    // Retry silencieux — rare
+                    performCreate(avatarId: avatarId)
+                }
+            }
+        }
+    }
+
+    /// Rejoint la room sur Firebase après que l'utilisateur a choisi son avatar.
+    private func performJoin(avatarId: String) {
+        isLoadingCreate = true
+        FirebaseManager.shared.joinRoom(
+            code: joinCode,
+            userId: userSession.userId,
+            avatarId: avatarId,
+            userName: userSession.username
+        ) { success in
+            DispatchQueue.main.async {
+                isLoadingCreate = false
+                if success {
+                    userSession.setRoomCode(joinCode)
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    beginCompletion()
+                } else {
+                    // Afficher une erreur ou retry
+                    isLoadingCreate = false
+                }
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -553,28 +612,6 @@ struct OnboardingView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             onComplete()
-        }
-    }
-
-    private func performJoin() {
-        // Haptic "mega cool" au tap : triple bump croissant
-        let heavy  = UIImpactFeedbackGenerator(style: .heavy)
-        let medium = UIImpactFeedbackGenerator(style: .medium)
-        let soft   = UIImpactFeedbackGenerator(style: .soft)
-        soft.prepare(); medium.prepare(); heavy.prepare()
-        soft.impactOccurred()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { medium.impactOccurred() }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) { heavy.impactOccurred() }
-
-        isLoadingJoin = true
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            await MainActor.run {
-                // Notification de succès à la fin du chargement
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-                isLoadingJoin = false
-                step = 7
-            }
         }
     }
 
@@ -607,22 +644,14 @@ private struct OnboardingAvatarCell: View {
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                Circle()
-                    .fill(isSelected ? Color(hex: "E3EAF0") : Color.roomlyGrey0)
-                Image(name)
-                    .resizable()
-                    .scaledToFill()
-                    .scaleEffect(x: -1, y: 1)
-                    .clipShape(Circle())
-                    .padding(4)
+                Circle().fill(isSelected ? Color(hex: "E3EAF0") : Color.roomlyGrey0)
+                Image(name).resizable().scaledToFill()
+                    .scaleEffect(x: -1, y: 1).clipShape(Circle()).padding(4)
                     .opacity(isTaken ? 0.25 : 1.0)
             }
-            .overlay(
-                Circle().strokeBorder(
-                    isSelected ? Color.roomlyBlack.opacity(0.25) : Color.clear,
-                    lineWidth: 2
-                )
-            )
+            .overlay(Circle().strokeBorder(
+                isSelected ? Color.roomlyBlack.opacity(0.25) : Color.clear, lineWidth: 2
+            ))
             .aspectRatio(1, contentMode: .fit)
         }
         .buttonStyle(RoomlyStaticButtonStyle())
@@ -631,7 +660,7 @@ private struct OnboardingAvatarCell: View {
     }
 }
 
-// MARK: - Tab Button (Create / Join)
+// MARK: - Tab Button
 
 private struct OnboardingTabButton: View {
     let title: String
@@ -643,8 +672,7 @@ private struct OnboardingTabButton: View {
             Text(title)
                 .font(.switzer(14))
                 .foregroundColor(isSelected ? .white : .roomlyGrey25)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity).padding(.vertical, 10)
                 .background(isSelected ? Color.roomlyBlack : Color.clear)
                 .clipShape(Capsule())
         }

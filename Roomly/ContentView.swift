@@ -161,6 +161,14 @@ struct ContentView: View {
         }
         .onAppear {
             scheduleNotifications()
+            // Démarre l'écoute temps réel des membres de la room
+            if let avatarId = userSession.currentAvatarId {
+                roommateManager.startListening(
+                    roomCode: userSession.roomCode,
+                    currentUserId: userSession.userId,
+                    currentAvatarId: avatarId
+                )
+            }
         }
         .onChange(of: streakVM.currentTrailingStreak) { _, _ in
             scheduleNotifications()
