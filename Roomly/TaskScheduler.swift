@@ -17,6 +17,13 @@ final class TaskScheduler: ObservableObject {
     private var firestoreListener: ListenerRegistration?
     // Lit les avatars actifs depuis UserDefaults (partagé avec RoommateManager)
     private let avatarIds: [String]
+    /// Vérifie si le jour-off (luckyDay) est actif pour l'utilisateur courant, en lisant UserDefaults.
+    private var isLuckyDayActive: Bool {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return UserDefaults.standard.bool(forKey: "luckyDayAvailable_\(f.string(from: Date()))")
+    }
+
     /// Pool dynamique : tâches de base (non supprimées) + tâches pending ajoutées par l'utilisateur.
     /// Lu depuis UserDefaults pour rester découplé de TaskStore.
     private var currentTaskPool: [String] {
@@ -45,15 +52,20 @@ final class TaskScheduler: ObservableObject {
     // MARK: Public API
 
     /// Tente d'assigner immédiatement `taskId` à un avatar qui n'a pas de tâche aujourd'hui.
-    /// - Returns: `true` si la tâche a été attribuée à un avatar libre, `false` si tous les avatars ont déjà une tâche (la tâche reste alors dans le pool pour les jours suivants).
+    /// L'utilisateur courant (slot 0) est ignoré s'il a un day-off actif.
+    /// - Returns: `true` si la tâche a été attribuée à un avatar libre, `false` sinon.
     @discardableResult
     func assignToUnassignedAvatar(taskId: String) -> Bool {
-        // Cherche un avatar sans tâche aujourd'hui
-        guard let target = avatarIds.first(where: { todayAssignments[$0] == nil }) else {
-            return false
-        }
         // Évite de réassigner si la tâche est déjà attribuée à quelqu'un
         guard !todayAssignments.values.contains(taskId) else { return false }
+
+        // L'utilisateur courant (slot 0) est éligible seulement s'il n'a pas de day-off
+        let currentUserId = avatarIds.first
+        guard let target = avatarIds.first(where: { avatarId in
+            guard todayAssignments[avatarId] == nil else { return false }
+            if avatarId == currentUserId && isLuckyDayActive { return false }
+            return true
+        }) else { return false }
 
         todayAssignments[target] = taskId
 
@@ -63,6 +75,24 @@ final class TaskScheduler: ObservableObject {
         UserDefaults.standard.set(todayAssignments, forKey: key)
         FirebaseManager.shared.uploadTaskAssignments(todayAssignments, forDate: todayStr)
         return true
+    }
+
+    // MARK: Private — ensure current user always has a task when one is available
+
+    /// Si l'utilisateur courant (slot 0) n'a pas de tâche aujourd'hui mais qu'il y a des tâches
+    /// non attribuées dans le pool, et qu'il n'a pas de day-off, lui assigne la première disponible.
+    private func ensureCurrentUserHasTask() {
+        guard !isLuckyDayActive else { return }
+        guard let myId = avatarIds.first else { return }
+        guard todayAssignments[myId] == nil else { return }
+
+        let assignedIds = Set(todayAssignments.values)
+        guard let pendingId = currentTaskPool.first(where: { !assignedIds.contains($0) }) else { return }
+
+        todayAssignments[myId] = pendingId
+        let todayStr = dateString(Date())
+        UserDefaults.standard.set(todayAssignments, forKey: "taskAssignments_\(todayStr)")
+        FirebaseManager.shared.uploadTaskAssignments(todayAssignments, forDate: todayStr)
     }
 
     /// Retourne la tâche assignée à `avatarId` aujourd'hui, ou `nil` si ce roommate n'a pas de tâche.
@@ -110,9 +140,10 @@ final class TaskScheduler: ObservableObject {
         let pool = currentTaskPool
         let expectedCount = min(pool.count, avatarIds.count)
         if let saved = UserDefaults.standard.dictionary(forKey: key) as? [String: String],
-           saved.count == expectedCount,
+           saved.count >= expectedCount,                          // >= allows extra assignment from ensureCurrentUserHasTask
            saved.keys.allSatisfy({ avatarIds.contains($0) }) {
             todayAssignments = saved
+            ensureCurrentUserHasTask()
             return
         }
 
@@ -123,6 +154,7 @@ final class TaskScheduler: ObservableObject {
         todayAssignments = newAssignments
         UserDefaults.standard.set(newAssignments, forKey: key)
         FirebaseManager.shared.uploadTaskAssignments(newAssignments, forDate: todayStr)
+        ensureCurrentUserHasTask()
     }
 
     private func listenToFirestoreAssignments() {
@@ -135,6 +167,8 @@ final class TaskScheduler: ObservableObject {
                 self.todayAssignments = remote
                 let key = "taskAssignments_\(todayStr)"
                 UserDefaults.standard.set(remote, forKey: key)
+                // Vérifie si l'utilisateur courant doit recevoir une tâche pending
+                self.ensureCurrentUserHasTask()
             }
         }
     }
