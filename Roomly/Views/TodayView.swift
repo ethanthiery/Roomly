@@ -87,10 +87,24 @@ struct TodayView: View {
                                     clothReward: myTask.clothReward
                                 )
                             } else {
-                                Text("No task assigned today.")
-                                    .font(.satoshi(16))
-                                    .foregroundColor(.roomlyGrey25)
-                                    .padding(.vertical, 8)
+                                Button {
+                                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                                    NotificationCenter.default.post(name: .openTasksTab, object: nil)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text("PICK YOUR TASK")
+                                            .font(.switzer(14))
+                                            .foregroundColor(.white)
+                                        Image(systemName: "arrow.right")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 46)
+                                    .background(Color.roomlyBlack)
+                                    .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.button))
+                                }
+                                .buttonStyle(RoomlyStaticButtonStyle())
                             }
                         }
                         .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
@@ -100,48 +114,67 @@ struct TodayView: View {
                             HStack {
                                 SectionTitle("Roomates Tasks")
                                 Spacer()
-                                HStack(spacing: 2) {
-                                    Text("Swipe To See All")
-                                        .font(.satoshi(14))
-                                        .foregroundColor(.roomlyGrey25)
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.roomlyGrey25)
+                                if roommateManager.activeAvatarIds.count > 1 {
+                                    HStack(spacing: 2) {
+                                        Text("Swipe To See All")
+                                            .font(.satoshi(14))
+                                            .foregroundColor(.roomlyGrey25)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.roomlyGrey25)
+                                    }
                                 }
                             }
-                            GeometryReader { geo in
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 0) {
-                                        ForEach(roommateManager.activeAvatarIds.filter { $0 != (userSession.currentAvatarId ?? "avatar1") }, id: \.self) { avatarId in
-                                            if let t = taskScheduler.task(for: avatarId) {
-                                                let info = AvatarInfo.info(for: avatarId)
-                                                TaskCardView(
-                                                    ownerAvatar: avatarId,
-                                                    ownerLabel: info.ownerLabel,
-                                                    timeLeft: taskScheduler.timeLeftString,
-                                                    taskTitle: t.title,
-                                                    taskSubtitle: t.subtitle,
-                                                    progress: "0/1 COMPLETE",
-                                                    taskImage: t.image,
-                                                    style: .roommateTask,
-                                                    clothReward: t.clothReward
-                                                )
-                                                .padding(.horizontal, RoomlySpacing.screenPadding)
-                                                .frame(width: geo.size.width)
-                                                .id(avatarId)
+                            if roommateManager.activeAvatarIds.count <= 1 {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "person.2")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(.roomlyGrey25)
+                                    Text("Invite roommates to see their tasks here")
+                                        .font(.satoshi(15))
+                                        .foregroundColor(.roomlyGrey25)
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.horizontal, RoomlySpacing.screenPadding)
+                                .padding(.vertical, 20)
+                                .background(Color.roomlyGrey0)
+                                .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
+                            } else {
+                                GeometryReader { geo in
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 0) {
+                                            ForEach(roommateManager.activeAvatarIds.filter { $0 != (userSession.currentAvatarId ?? "avatar1") }, id: \.self) { avatarId in
+                                                if let t = taskScheduler.task(for: avatarId) {
+                                                    let info = AvatarInfo.info(for: avatarId)
+                                                    TaskCardView(
+                                                        ownerAvatar: avatarId,
+                                                        ownerLabel: info.ownerLabel,
+                                                        timeLeft: taskScheduler.timeLeftString,
+                                                        taskTitle: t.title,
+                                                        taskSubtitle: t.subtitle,
+                                                        progress: "0/1 COMPLETE",
+                                                        taskImage: t.image,
+                                                        style: .roommateTask,
+                                                        clothReward: t.clothReward
+                                                    )
+                                                    .padding(.horizontal, RoomlySpacing.screenPadding)
+                                                    .frame(width: geo.size.width)
+                                                    .id(avatarId)
+                                                }
                                             }
                                         }
+                                        .scrollTargetLayout()
                                     }
-                                    .scrollTargetLayout()
+                                    .scrollTargetBehavior(.viewAligned)
+                                    .scrollPosition(id: $scrolledRoommateId)
+                                    .onChange(of: scrolledRoommateId) { _, _ in
+                                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                                    }
                                 }
-                                .scrollTargetBehavior(.viewAligned)
-                                .scrollPosition(id: $scrolledRoommateId)
-                                .onChange(of: scrolledRoommateId) { _, _ in
-                                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                                }
+                                .padding(.horizontal, -RoomlySpacing.screenPadding)
+                                .frame(height: 181)
                             }
-                            .padding(.horizontal, -RoomlySpacing.screenPadding)
-                            .frame(height: 181)
                         }
                         .modifier(CascadeReveal(visible: contentVisible, delay: 0.37))
                     }

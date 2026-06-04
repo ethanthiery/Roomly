@@ -178,32 +178,62 @@ struct CardsView: View {
                 .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
 
                 // MARK: — Leaderboard
-                VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
-                    HStack {
+                if roommateManager.activeAvatarIds.count > 1 {
+                    VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
+                        HStack {
+                            Text("LeaderBoard")
+                                .font(.switzer(20))
+                                .foregroundColor(.roomlyBlack)
+                                .tracking(-0.5)
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Image(userSession.currentAvatarId ?? "avatar1")
+                                    .resizable().scaledToFill()
+                                    .frame(width: 30, height: 30)
+                                    .scaleEffect(x: -1, y: 1)
+                                    .clipShape(Circle())
+                                Text("You're the \(LeaderboardData.myRank(myAvatarId: userSession.currentAvatarId ?? "avatar1", allBalances: allMonthlyBalances, activeAvatarIds: roommateManager.activeAvatarIds)) !")
+                                    .font(.switzer(14))
+                                    .foregroundColor(.roomlyBlack)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.roomlyGrey0)
+                            .clipShape(Capsule())
+                        }
+
+                        LeaderboardPodium(myAvatarId: userSession.currentAvatarId ?? "avatar1", allBalances: allMonthlyBalances, activeAvatarIds: roommateManager.activeAvatarIds)
+                    }
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
+                } else {
+                    VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
                         Text("LeaderBoard")
                             .font(.switzer(20))
                             .foregroundColor(.roomlyBlack)
                             .tracking(-0.5)
-                        Spacer()
-                        HStack(spacing: 4) {
+
+                        HStack(spacing: 12) {
                             Image(userSession.currentAvatarId ?? "avatar1")
                                 .resizable().scaledToFill()
-                                .frame(width: 30, height: 30)
+                                .frame(width: 44, height: 44)
                                 .scaleEffect(x: -1, y: 1)
                                 .clipShape(Circle())
-                            Text("You're the \(LeaderboardData.myRank(myAvatarId: userSession.currentAvatarId ?? "avatar1", allBalances: allMonthlyBalances, activeAvatarIds: roommateManager.activeAvatarIds)) !")
-                                .font(.switzer(14))
-                                .foregroundColor(.roomlyBlack)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("You're #1 — unbeatable for now")
+                                    .font(.switzer(15))
+                                    .foregroundColor(.roomlyBlack)
+                                Text("Invite roommates to start competing")
+                                    .font(.satoshi(14))
+                                    .foregroundColor(.roomlyGrey25)
+                            }
+                            Spacer()
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(16)
                         .background(Color.roomlyGrey0)
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
                     }
-
-                    LeaderboardPodium(myAvatarId: userSession.currentAvatarId ?? "avatar1", allBalances: allMonthlyBalances, activeAvatarIds: roommateManager.activeAvatarIds)
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
                 }
-                .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
 
                 // MARK: — Grind progression
                 VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {

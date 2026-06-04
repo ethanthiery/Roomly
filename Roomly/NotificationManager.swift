@@ -146,5 +146,6 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
 // MARK: - Notification Name
 
 extension Notification.Name {
-    static let openTodayTab = Notification.Name("openTodayTab")
+    static let openTodayTab  = Notification.Name("openTodayTab")
+    static let openTasksTab  = Notification.Name("openTasksTab")
 }

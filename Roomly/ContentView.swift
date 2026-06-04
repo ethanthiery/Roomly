@@ -187,6 +187,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .openTodayTab)) { _ in
             selectedTab = 0
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openTasksTab)) { _ in
+            selectedTab = 1
+        }
     }
 
     private func scheduleNotifications() {

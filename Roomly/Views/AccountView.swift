@@ -214,7 +214,7 @@ private struct RoomCard: View {
                             .frame(width: 14, height: 14)
                             .colorInvert()
                     }
-                    Text("ADD NEW ROOMATES")
+                    Text("ADD ROOMATES")
                         .font(.switzer(14))
                         .foregroundColor(.white)
                 }
