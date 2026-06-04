@@ -483,8 +483,9 @@ struct OnboardingView: View {
             Spacer()
 
             // Code display
+            let displayCode = userSession.roomCode.isEmpty ? generatedCode : userSession.roomCode
             VStack(spacing: 16) {
-                Text(generatedCode)
+                Text(displayCode)
                     .font(.switzer(48))
                     .foregroundColor(.roomlyBlack)
                     .tracking(8)
@@ -494,7 +495,7 @@ struct OnboardingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
 
                 // Share button
-                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
+                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(displayCode)") {
                     HStack(spacing: 8) {
                         Image(systemName: "square.and.arrow.up")
                         Text("SHARE CODE")
