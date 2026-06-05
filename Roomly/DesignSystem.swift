@@ -60,6 +60,64 @@ extension View {
     }
 }
 
+// MARK: - Shine Overlay
+
+/// Reflet lumineux diagonal qui balaie périodiquement une surface sombre,
+/// comme un reflet sur un verre de lunettes de soleil.
+///
+/// Usage : ajouter `ShineOverlay()` comme dernier enfant dans un ZStack —
+/// la clipShape du parent le découpe automatiquement à la bonne forme.
+struct ShineOverlay: View {
+    @State private var xPos: CGFloat  = -80
+    @State private var running        = false
+
+    var body: some View {
+        GeometryReader { geo in
+            // Bande lumineuse : plus haute que la carte pour couvrir les coins après rotation
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear,                location: 0.00),
+                            .init(color: .white.opacity(0.04),  location: 0.20),
+                            .init(color: .white.opacity(0.18),  location: 0.50),
+                            .init(color: .white.opacity(0.04),  location: 0.80),
+                            .init(color: .clear,                location: 1.00),
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 90, height: geo.size.height + 140)
+                .rotationEffect(.degrees(-22), anchor: .center)
+                // position(x:y:) place le centre du rectangle — on part hors gauche,
+                // on sort hors droite, on repart depuis gauche
+                .position(x: xPos, y: geo.size.height / 2)
+                .onAppear {
+                    guard !running else { return }
+                    running = true
+                    xPos = -80
+                    loop(width: geo.size.width)
+                }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func loop(width: CGFloat) {
+        // 3.2 s de pause entre chaque balayage
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
+            withAnimation(.easeInOut(duration: 0.62)) {
+                xPos = width + 80          // balaie vers la droite
+            }
+            // Réinitialise immédiatement (invisible car hors écran) puis reboucle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+                xPos = -80
+                loop(width: width)
+            }
+        }
+    }
+}
+
 // MARK: - Button Styles
 
 /// Animation partagée press / release — même feel dans toute l'app.

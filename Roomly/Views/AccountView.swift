@@ -157,6 +157,9 @@ private struct AccountPromoCard: View {
             .padding(.top, 24)
             .padding(.bottom, 12)
             .frame(maxHeight: .infinity)
+
+            // Reflet lumineux diagonal — clipShape ci-dessous le découpe au radius de la carte
+            ShineOverlay()
         }
         .frame(height: 200)
         .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))

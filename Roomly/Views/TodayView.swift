@@ -438,6 +438,8 @@ private struct PromoCard: View {
             .padding(.bottom, 12)
             .padding(.top, 24)
             .frame(maxHeight: .infinity)
+
+            ShineOverlay()
         }
         .frame(height: 200)
         .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
