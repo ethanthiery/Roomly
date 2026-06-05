@@ -280,6 +280,7 @@ private struct GetProButton: View {
                 .padding(.horizontal, 12)
         }
         .buttonStyle(RoomlyPrimaryButtonStyle())
+        .overlay(ShineOverlay().clipShape(Capsule()))
     }
 }
 
