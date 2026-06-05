@@ -209,10 +209,7 @@ private struct RoomCard: View {
                 let shareText = "Join my Roomfly flat \"\(userSession.roomName)\" with code : \(userSession.roomCode)"
                 UIPasteboard.general.string = shareText
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showCopiedToast = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
-                    withAnimation(.easeOut(duration: 0.25)) { showCopiedToast = false }
-                }
+                showCopiedToast = true
             } label: {
                 HStack {
                     Text("Room code")
