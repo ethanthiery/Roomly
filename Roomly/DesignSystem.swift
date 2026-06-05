@@ -62,11 +62,17 @@ extension View {
 
 // MARK: - Button Styles
 
+/// Animation partagée press / release — même feel dans toute l'app.
+private extension Animation {
+    /// Press-down rapide, release avec un léger rebond — identique au bouton "continue" du paywall.
+    static let roomlyPress = Animation.spring(response: 0.22, dampingFraction: 0.78)
+}
+
 extension Color {
     static let roomlyPrimaryPressed = Color(hex: "433131")
 }
 
-/// Bouton primaire — disabled : #E3EAF0 + texte blanc, aucun état press
+/// Bouton primaire — disabled : #E3EAF0 + texte blanc
 struct RoomlyPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
@@ -75,30 +81,43 @@ struct RoomlyPrimaryButtonStyle: ButtonStyle {
             .foregroundColor(.white)
             .background(!isEnabled ? Color(hex: "E3EAF0") : Color.roomlyBlack)
             .clipShape(Capsule())
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.82 : 1.0)
+            .animation(.roomlyPress, value: configuration.isPressed)
     }
 }
 
-/// Bouton secondaire blanc — aucun état press
+/// Bouton secondaire blanc
 struct RoomlySecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(Color.white)
             .clipShape(Capsule())
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.82 : 1.0)
+            .animation(.roomlyPress, value: configuration.isPressed)
     }
 }
 
-/// Bouton tertiaire grey-0 — aucun état press
+/// Bouton tertiaire grey-0
 struct RoomlyTertiaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(Color.roomlyGrey0)
             .clipShape(Capsule())
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.82 : 1.0)
+            .animation(.roomlyPress, value: configuration.isPressed)
     }
 }
 
-/// Style neutre — aucun effet visuel au press ni au hover
+/// Style de base — appliqué globalement à la racine de l'app pour couvrir
+/// tous les boutons sans style explicite.
 struct RoomlyStaticButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.82 : 1.0)
+            .animation(.roomlyPress, value: configuration.isPressed)
     }
 }

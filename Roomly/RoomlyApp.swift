@@ -64,6 +64,11 @@ struct RoomlyApp: App {
                     .environmentObject(roommateManager)
                 }
             }
+            // Applique l'animation press à TOUS les boutons de l'app (cascades via environment,
+            // y compris fullScreenCover et les overlays modaux).
+            // Les boutons ayant déjà un .buttonStyle() explicite gardent leur propre style
+            // (qui inclut désormais aussi l'animation), les autres héritent de celui-ci.
+            .buttonStyle(RoomlyStaticButtonStyle())
             .task {
                 NotificationManager.shared.requestPermission()
             }
