@@ -6,64 +6,85 @@ struct AccountView: View {
     @EnvironmentObject var userSession: UserSession
     @State private var contentVisible = false
     @EnvironmentObject var animTracker: TabAnimationTracker
+    @State private var showCopiedToast = false
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
+        ZStack(alignment: .bottom) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
 
-                // MARK: — Title
-                Text("Your Account")
-                    .font(.switzer(32))
-                    .foregroundColor(.roomlyBlack)
-                    .tracking(-0.5)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
-
-                // MARK: — Profile row
-                HStack(spacing: 12) {
-                    Image(userSession.currentAvatarId ?? "avatar1")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 36, height: 36)
-                        .clipShape(Circle())
-                        .scaleEffect(x: -1, y: 1)
-
-                    Text(userSession.username.isEmpty ? "You" : userSession.username)
-                        .font(.switzer(20))
+                    // MARK: — Title
+                    Text("Your Account")
+                        .font(.switzer(32))
                         .foregroundColor(.roomlyBlack)
                         .tracking(-0.5)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
 
-                    Spacer()
+                    // MARK: — Profile row
+                    HStack(spacing: 12) {
+                        Image(userSession.currentAvatarId ?? "avatar1")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 36, height: 36)
+                            .clipShape(Circle())
+                            .scaleEffect(x: -1, y: 1)
 
-                    Text("Free Account")
-                        .font(.switzer(14))
-                        .foregroundColor(Color(hex: "555555"))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.roomlyGrey0)
-                        .clipShape(Capsule())
+                        Text(userSession.username.isEmpty ? "You" : userSession.username)
+                            .font(.switzer(20))
+                            .foregroundColor(.roomlyBlack)
+                            .tracking(-0.5)
+
+                        Spacer()
+
+                        Text("Free Account")
+                            .font(.switzer(14))
+                            .foregroundColor(Color(hex: "555555"))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.roomlyGrey0)
+                            .clipShape(Capsule())
+                    }
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
+
+                    // MARK: — Promo dark card
+                    AccountPromoCard()
+                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
+
+                    // MARK: — Your Room section
+                    VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
+                        Text("Your Room")
+                            .font(.switzer(20))
+                            .foregroundColor(.roomlyBlack)
+                            .tracking(-0.5)
+
+                        RoomCard(showCopiedToast: $showCopiedToast)
+                    }
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
                 }
-                .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
-
-                // MARK: — Promo dark card
-                AccountPromoCard()
-                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
-
-                // MARK: — Your Room section
-                VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
-                    Text("Your Room")
-                        .font(.switzer(20))
-                        .foregroundColor(.roomlyBlack)
-                        .tracking(-0.5)
-
-                    RoomCard()
-                }
-                .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
+                .padding(.horizontal, RoomlySpacing.screenPadding)
+                .padding(.top, 16)
+                .padding(.bottom, 100)
             }
-            .padding(.horizontal, RoomlySpacing.screenPadding)
-            .padding(.top, 16)
-            .padding(.bottom, 100)
+
+            // Toast confirmation
+            if showCopiedToast {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Code copied!")
+                        .font(.switzer(14))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.roomlyBlack)
+                .clipShape(Capsule())
+                .padding(.bottom, 100)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showCopiedToast)
         .onAppear {
             if animTracker.shouldAnimate("account") {
                 contentVisible = true
@@ -168,6 +189,7 @@ private struct AccountPromoCard: View {
 // MARK: - Room Card
 
 private struct RoomCard: View {
+    @Binding var showCopiedToast: Bool
     @EnvironmentObject var leaveRoomSheetManager: LeaveRoomSheetManager
     @EnvironmentObject var userSession: UserSession
     @EnvironmentObject var roommateManager: RoommateManager
@@ -201,7 +223,39 @@ private struct RoomCard: View {
                     .clipShape(Capsule())
             }
 
-            // ADD NEW ROOMATES
+            // Room code — tap to copy
+            Button {
+                let shareText = "Join my Roomfly flat \"\(userSession.roomName)\" with code : \(userSession.roomCode)"
+                UIPasteboard.general.string = shareText
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showCopiedToast = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+                    withAnimation(.easeOut(duration: 0.25)) { showCopiedToast = false }
+                }
+            } label: {
+                HStack {
+                    Text("Room code")
+                        .font(.satoshi(14))
+                        .foregroundColor(.roomlyGrey25)
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Text(userSession.roomCode)
+                            .font(.switzer(16))
+                            .foregroundColor(.roomlyBlack)
+                            .tracking(2)
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 12))
+                            .foregroundColor(.roomlyGrey25)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(RoomlyStaticButtonStyle())
+
+            // ADD ROOMATES
             Button {
                 Superwall.shared.register(placement: "get_pro")
             } label: {

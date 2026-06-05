@@ -40,6 +40,9 @@ struct OnboardingView: View {
     @State private var completingOpacity = 0.0
     @State private var isLoadingCreate   = false
 
+    // Room code copy toast
+    @State private var showCopiedToast   = false
+
     private let allAvatars = [
         "avatar1","avatar2","avatar3","avatar4","avatar5",
         "avatar6","avatar7","avatar8","avatar9","avatar10"
@@ -486,8 +489,16 @@ struct OnboardingView: View {
             .padding(.horizontal, 24)
             Spacer()
 
-            // Code display
-            VStack(spacing: 16) {
+            // Code display — tap to copy
+            Button {
+                let shareText = "Join my Roomfly flat \"\(userSession.roomName)\" with code : \(generatedCode)"
+                UIPasteboard.general.string = shareText
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { showCopiedToast = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+                    withAnimation(.easeOut(duration: 0.25)) { showCopiedToast = false }
+                }
+            } label: {
                 Text(generatedCode)
                     .font(.switzer(48))
                     .foregroundColor(.roomlyBlack)
@@ -496,22 +507,8 @@ struct OnboardingView: View {
                     .padding(.vertical, 32)
                     .background(Color.roomlyGrey0)
                     .clipShape(RoundedRectangle(cornerRadius: RoomlyRadius.card))
-
-                // Share button
-                ShareLink(item: "Join my Roomly flat \"\(userSession.roomName)\" with code: \(generatedCode)") {
-                    HStack(spacing: 8) {
-                        Image(systemName: "square.and.arrow.up")
-                        Text("SHARE CODE")
-                    }
-                    .font(.switzer(14))
-                    .foregroundColor(.roomlyBlack)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.roomlyGrey0)
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(RoomlyStaticButtonStyle())
             }
+            .buttonStyle(RoomlyStaticButtonStyle())
             .padding(.horizontal, 24)
 
             Spacer()
@@ -523,6 +520,24 @@ struct OnboardingView: View {
             .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            if showCopiedToast {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Code copied!")
+                        .font(.switzer(14))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color.roomlyBlack)
+                .clipShape(Capsule())
+                .padding(.bottom, 120)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showCopiedToast)
     }
 
     // MARK: - Actions
