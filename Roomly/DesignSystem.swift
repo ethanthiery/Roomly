@@ -88,7 +88,7 @@ struct ShineOverlay: View {
                         endPoint: .trailing
                     )
                 )
-                .frame(width: 90, height: geo.size.height + 140)
+                .frame(width: 130, height: geo.size.height + 140)
                 .rotationEffect(.degrees(-22), anchor: .center)
                 // position(x:y:) place le centre du rectangle — on part hors gauche,
                 // on sort hors droite, on repart depuis gauche
@@ -105,12 +105,12 @@ struct ShineOverlay: View {
 
     private func loop(width: CGFloat) {
         // 3.2 s de pause entre chaque balayage
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.2) {
-            withAnimation(.easeInOut(duration: 0.62)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            withAnimation(.easeInOut(duration: 0.95)) {
                 xPos = width + 80          // balaie vers la droite
             }
             // Réinitialise immédiatement (invisible car hors écran) puis reboucle
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.65) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 xPos = -80
                 loop(width: width)
             }
