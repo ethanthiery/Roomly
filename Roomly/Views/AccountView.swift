@@ -9,82 +9,63 @@ struct AccountView: View {
     @State private var showCopiedToast = false
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: RoomlySpacing.sectionGap) {
 
-                    // MARK: — Title
-                    Text("Your Account")
-                        .font(.switzer(32))
+                // MARK: — Title
+                Text("Your Account")
+                    .font(.switzer(32))
+                    .foregroundColor(.roomlyBlack)
+                    .tracking(-0.5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
+
+                // MARK: — Profile row
+                HStack(spacing: 12) {
+                    Image(userSession.currentAvatarId ?? "avatar1")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(Circle())
+                        .scaleEffect(x: -1, y: 1)
+
+                    Text(userSession.username.isEmpty ? "You" : userSession.username)
+                        .font(.switzer(20))
                         .foregroundColor(.roomlyBlack)
                         .tracking(-0.5)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.05))
 
-                    // MARK: — Profile row
-                    HStack(spacing: 12) {
-                        Image(userSession.currentAvatarId ?? "avatar1")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 36, height: 36)
-                            .clipShape(Circle())
-                            .scaleEffect(x: -1, y: 1)
+                    Spacer()
 
-                        Text(userSession.username.isEmpty ? "You" : userSession.username)
-                            .font(.switzer(20))
-                            .foregroundColor(.roomlyBlack)
-                            .tracking(-0.5)
-
-                        Spacer()
-
-                        Text("Free Account")
-                            .font(.switzer(14))
-                            .foregroundColor(Color(hex: "555555"))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.roomlyGrey0)
-                            .clipShape(Capsule())
-                    }
-                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
-
-                    // MARK: — Promo dark card
-                    AccountPromoCard()
-                        .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
-
-                    // MARK: — Your Room section
-                    VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
-                        Text("Your Room")
-                            .font(.switzer(20))
-                            .foregroundColor(.roomlyBlack)
-                            .tracking(-0.5)
-
-                        RoomCard(showCopiedToast: $showCopiedToast)
-                    }
-                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
-                }
-                .padding(.horizontal, RoomlySpacing.screenPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 100)
-            }
-
-            // Toast confirmation
-            if showCopiedToast {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Code copied!")
+                    Text("Free Account")
                         .font(.switzer(14))
+                        .foregroundColor(Color(hex: "555555"))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.roomlyGrey0)
+                        .clipShape(Capsule())
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Color.roomlyBlack)
-                .clipShape(Capsule())
-                .padding(.bottom, 100)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.13))
+
+                // MARK: — Promo dark card
+                AccountPromoCard()
+                    .modifier(CascadeReveal(visible: contentVisible, delay: 0.21))
+
+                // MARK: — Your Room section
+                VStack(alignment: .leading, spacing: RoomlySpacing.cardGap) {
+                    Text("Your Room")
+                        .font(.switzer(20))
+                        .foregroundColor(.roomlyBlack)
+                        .tracking(-0.5)
+
+                    RoomCard(showCopiedToast: $showCopiedToast)
+                }
+                .modifier(CascadeReveal(visible: contentVisible, delay: 0.29))
             }
+            .padding(.horizontal, RoomlySpacing.screenPadding)
+            .padding(.top, 16)
+            .padding(.bottom, 100)
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showCopiedToast)
+        .roomlyToast(isPresented: $showCopiedToast, message: "Code copied!")
         .onAppear {
             if animTracker.shouldAnimate("account") {
                 contentVisible = true

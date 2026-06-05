@@ -520,24 +520,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 24).padding(.bottom, 44)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .overlay(alignment: .bottom) {
-            if showCopiedToast {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Code copied!")
-                        .font(.switzer(14))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Color.roomlyBlack)
-                .clipShape(Capsule())
-                .padding(.bottom, 120)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showCopiedToast)
+        .roomlyToast(isPresented: $showCopiedToast, message: "Code copied!", bottomPadding: 120)
     }
 
     // MARK: - Actions
